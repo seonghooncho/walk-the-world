@@ -1,0 +1,72 @@
+spring:
+  application:
+    name: walkworld-api
+
+  profiles:
+    active: local
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+---
+# Local profile
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:mysql://localhost:3306/walkworld?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+
+jwt:
+  secret: local-dev-secret-key-must-be-at-least-256-bits-long-for-hs256
+  access-token-expiry: 3600000      # 1 hour
+  refresh-token-expiry: 604800000   # 7 days
+
+aws:
+  s3:
+    bucket: walkworld-uploads-local
+    region: ap-northeast-2
+
+---
+# Production profile
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiry: 3600000
+  refresh-token-expiry: 604800000
+
+aws:
+  s3:
+    bucket: ${S3_BUCKET}
+    region: ${AWS_REGION}
