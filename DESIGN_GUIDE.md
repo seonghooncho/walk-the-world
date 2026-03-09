@@ -324,7 +324,6 @@ infra/
     ├── init/                    # Terraform state용 S3 + DynamoDB bootstrap
     └── minimum/                 # 현재 운영 기준 최소 인프라
         ├── env/
-        │   ├── dev/             # dev 환경 진입점
         │   └── prod/            # prod 환경 진입점
         ├── database.tf          # Neon Postgres
         ├── ssm.tf               # SSM Parameter Store

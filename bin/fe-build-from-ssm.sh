@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ENVIRONMENT="${1:?usage: bin/fe-build-from-ssm.sh <dev|prod>}"
+ENVIRONMENT="${1:-prod}"
 AWS_REGION="${AWS_REGION:-ap-northeast-2}"
 SSM_PREFIX="${SSM_PREFIX:-/walkworld/${ENVIRONMENT}/frontend}"
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"

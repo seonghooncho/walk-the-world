@@ -3,19 +3,19 @@ SHELL := /bin/bash
 NPM ?= npm
 GRADLE ?= gradle
 TERRAFORM ?= terraform
-ENV ?= dev
+ENV ?= prod
 
 .PHONY: help fe-install fe-dev fe-build fe-lint fe-test fe-check \
 	fe-build-ssm \
 	be-build be-test be-zip be-generate-reference-seed \
-	infra-fmt infra-init-validate infra-validate-dev infra-validate-prod
+	infra-fmt infra-init-validate infra-validate-prod
 
 help:
 	@printf '%s\n' \
 		'fe-install         Install frontend dependencies' \
 		'fe-dev             Run frontend dev server' \
 		'fe-build           Build frontend' \
-		'fe-build-ssm       Build frontend with Vite vars loaded from SSM (ENV=dev|prod)' \
+		'fe-build-ssm       Build frontend with Vite vars loaded from SSM (ENV=prod)' \
 		'fe-lint            Lint frontend' \
 		'fe-test            Run frontend tests' \
 		'fe-check           Run frontend lint, test, and build' \
@@ -25,7 +25,6 @@ help:
 		'be-generate-reference-seed Generate Flyway seed SQL from frontend world data' \
 		'infra-fmt          Format Terraform files' \
 		'infra-init-validate Validate Terraform bootstrap module' \
-		'infra-validate-dev Validate Terraform for dev env' \
 		'infra-validate-prod Validate Terraform for prod env'
 
 fe-install:
@@ -67,10 +66,6 @@ infra-fmt:
 infra-init-validate:
 	$(TERRAFORM) -chdir=infra/terraform/init init -backend=false
 	$(TERRAFORM) -chdir=infra/terraform/init validate
-
-infra-validate-dev:
-	$(TERRAFORM) -chdir=infra/terraform/minimum/env/dev init -backend=false
-	$(TERRAFORM) -chdir=infra/terraform/minimum/env/dev validate
 
 infra-validate-prod:
 	$(TERRAFORM) -chdir=infra/terraform/minimum/env/prod init -backend=false
