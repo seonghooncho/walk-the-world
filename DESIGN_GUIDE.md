@@ -4,6 +4,16 @@
 
 ---
 
+## 근본 목적
+
+- 프론트엔드 UI 자산과 설계 규칙을 한 문서로 정리해 일관된 사용자 경험과 빠른 화면 구현을 지원한다.
+- 현재 저장소 구조 기준으로 실제 파일 위치를 반영해 디자인 규칙과 구현 경로 간의 혼선을 줄인다.
+
+## 비목적
+
+- 백엔드 API 설계나 인프라 구성까지 이 문서에서 다루지 않는다.
+- 컴포넌트를 과도하게 세분화하는 분리 자체를 목표로 하지 않는다.
+
 ## 1. 디자인 철학
 
 | 항목 | 설명 |
@@ -17,7 +27,7 @@
 
 ## 2. 컬러 토큰 (CSS Variables)
 
-모든 색상은 HSL 포맷으로 `src/index.css`의 `:root`에서 정의하고, `tailwind.config.ts`에서 Tailwind 클래스로 매핑합니다.  
+모든 색상은 HSL 포맷으로 `fe/src/index.css`의 `:root`에서 정의하고, `fe/tailwind.config.ts`에서 Tailwind 클래스로 매핑합니다.  
 **⚠️ 컴포넌트에서 raw 색상값(bg-black, text-white 등)을 직접 사용하지 마세요.**
 
 ### 기본 토큰
@@ -114,14 +124,16 @@
 |------|------|------|
 | `getTimeAgo()` | `lib/timeAgo.ts` | 상대 시간 포맷 (방금 전, n분 전, n시간 전...) |
 | `cn()` | `lib/utils.ts` | Tailwind 클래스 병합 (clsx + tailwind-merge) |
-| `useAppStore` | `stores/appStore.ts` | Zustand 전역 상태 (유저, 게시물, 미션, 재화) |
+| API client | `lib/api/*` | 도메인별 API 클라이언트와 토큰 처리 |
+| React Query hooks | `hooks/api/*` | 서버 상태 조회/변경 훅 |
+| `useAppStore` | `stores/appStore.ts` | UI/임시 상태 중심 Zustand 스토어 |
 | `useMobile()` | `hooks/use-mobile.tsx` | 모바일 뷰포트 감지 |
 
 ---
 
 ## 5. 상태 관리 (Zustand)
 
-> ⚠️ 현재 Zustand 스토어는 mock 데이터로 초기화되며, 백엔드 API 연동 시 로그인 후 서버 데이터로 교체해야 합니다.
+> 서버 상태는 React Query, UI/임시 상태는 Zustand로 분리합니다. 목 데이터는 `fe/src/mocks`에 두고 store는 데모 초기값과 UI 상태만 관리합니다.
 
 ```
 useAppStore
@@ -150,11 +162,11 @@ useAppStore
 
 | 데이터 | 현재 소스 | 백엔드 엔드포인트 | 비고 |
 |--------|----------|------------------|------|
-| 사용자 프로필 | `mockData.currentUser` → store | `GET /users/v1/me` | 로그인 시 복원 |
+| 사용자 프로필 | `mockData.currentUser` → store | `GET /users/v1/me` | 로그인 시 React Query 기준 복원 |
 | 사용자 룩업 | store.userMap (빌드 시 생성) | `GET /users/v1/{id}` | 캐시 역할 |
 | 도시 멤버 목록 | `mockData.cityUsers` 하드코딩 | `GET /cities/v1/{cityId}/members` | API 연동 필요 |
 | 게시물 | `mockData.posts` → store | `GET /posts/v1` | API 연동 필요 |
-| 채팅방·메시지 | store.chatRooms (중앙화 완료) | `GET /chat/v1/rooms`, `/messages` | API 연동 필요 |
+| 채팅방·메시지 | React Query + store 보조 상태 | `GET /chat/v1/rooms`, `/messages` | API 연동 필요 |
 | 미션 | `missionData.cityMissions` → store | `GET /missions/v1` | API 연동 필요 |
 | 오늘 걸음수 | `user.todaySteps` (store) | `GET /steps/v1/history` | API 연동 필요 |
 | 도시 마스터 | `mockData.cities` 하드코딩 | `GET /cities/v1` | 정적 or API |
@@ -209,15 +221,17 @@ useAppStore
 
 ### 프론트엔드
 ```
-src/
+fe/src/
 ├── assets/              # 이미지 에셋
 ├── components/
 │   ├── layout/          # AppLayout, BottomNav
 │   ├── shared/          # 재사용 컴포넌트 (위 표 참조)
 │   └── ui/              # shadcn/ui 기본 컴포넌트
-├── data/                # 목 데이터 (mockData, missionData, spotImages)
 ├── hooks/               # 커스텀 훅
-├── lib/                 # 유틸리티 (utils, timeAgo)
+│   └── api/             # React Query 훅
+├── lib/                 # 유틸리티와 API 클라이언트
+│   └── api/             # 도메인별 API 모듈
+├── mocks/               # 목 데이터 (mockData, missionData, spotImages)
 ├── pages/               # 라우트 페이지 컴포넌트
 └── stores/              # Zustand 스토어
 ```
@@ -229,6 +243,7 @@ backend/src/main/java/com/walkworld/api/
 ├── LambdaHandler.java            # AWS Lambda 어댑터
 ├── global/                       # 횡단 관심사 (Cross-cutting)
 │   ├── config/                   # SecurityConfig, S3Config, CorsConfig, JwtProperties, WebConfig
+│   ├── auth/                     # CurrentUserId resolver
 │   ├── entity/                   # BaseTimeEntity (JPA Auditing 베이스)
 │   ├── error/                    # BaseErrorCode, CustomException, GeneralErrorCode, GlobalExceptionHandler
 │   ├── health/                   # HealthCheckController
@@ -243,7 +258,7 @@ backend/src/main/java/com/walkworld/api/
     │   ├── error/                # AuthErrorCode, AuthException
     │   ├── jwt/                  # JwtProvider, JwtAuthenticationFilter
     │   ├── repository/           # RefreshTokenRepository
-    │   └── service/              # AuthService, AuthServiceImpl
+    │   └── service/              # AuthService
     ├── user/                     # 사용자 프로필 & 걸음 수
     │   ├── controller/           # UserController, StepController
     │   ├── converter/            # UserConverter
@@ -251,7 +266,7 @@ backend/src/main/java/com/walkworld/api/
     │   ├── entity/               # User (extends BaseTimeEntity)
     │   ├── error/                # UserErrorCode, UserException
     │   ├── repository/           # UserRepository
-    │   └── service/              # UserService, StepService + Impls
+    │   └── service/              # UserService, StepService
     ├── post/                     # 게시물/댓글/좋아요
     │   ├── controller/           # PostController
     │   ├── converter/            # PostConverter
@@ -259,7 +274,7 @@ backend/src/main/java/com/walkworld/api/
     │   ├── entity/               # Post (extends BaseTimeEntity), Comment, Like
     │   ├── error/                # PostErrorCode, PostException
     │   ├── repository/           # PostRepository, CommentRepository, LikeRepository
-    │   └── service/              # PostService, PostServiceImpl
+    │   └── service/              # PostService
     ├── mission/                  # 미션
     │   ├── controller/           # MissionController
     │   ├── converter/            # MissionConverter
@@ -267,7 +282,7 @@ backend/src/main/java/com/walkworld/api/
     │   ├── entity/               # Mission, UserMission
     │   ├── error/                # MissionErrorCode, MissionException
     │   ├── repository/           # MissionRepository, UserMissionRepository
-    │   └── service/              # MissionService, MissionServiceImpl
+    │   └── service/              # MissionService
     ├── friend/                   # 친구
     │   ├── controller/           # FriendController
     │   ├── converter/            # FriendConverter
@@ -275,26 +290,26 @@ backend/src/main/java/com/walkworld/api/
     │   ├── entity/               # Friendship
     │   ├── error/                # FriendErrorCode, FriendException
     │   ├── repository/           # FriendshipRepository
-    │   └── service/              # FriendService, FriendServiceImpl
+    │   └── service/              # FriendService
     ├── city/                     # 도시
     │   ├── controller/           # CityController
     │   ├── dto/                  # CityResponse, CityMemberResponse
     │   ├── entity/               # City
     │   ├── repository/           # CityRepository
-    │   └── service/              # CityService, CityServiceImpl
+    │   └── service/              # CityService
     ├── badge/                    # 배지
     │   ├── controller/           # BadgeController
     │   ├── dto/                  # BadgeResponse, BadgeListResponse, BadgeStatsResponse
     │   ├── entity/               # UserBadge
     │   ├── repository/           # UserBadgeRepository
-    │   └── service/              # BadgeService, BadgeServiceImpl
+    │   └── service/              # BadgeService
     ├── currency/                 # 재화 (쿠폰/하트)
     │   ├── controller/           # CurrencyController
     │   ├── dto/                  # CurrencyResponse
     │   ├── entity/               # UserCurrency, CurrencyTransaction
     │   ├── error/                # CurrencyErrorCode, CurrencyException
     │   ├── repository/           # UserCurrencyRepository, CurrencyTransactionRepository
-    │   └── service/              # CurrencyService, CurrencyServiceImpl
+    │   └── service/              # CurrencyService
     └── s3/                       # 파일 업로드
         ├── controller/           # S3Controller
         ├── enums/                # FileDomain
@@ -305,14 +320,16 @@ backend/src/main/java/com/walkworld/api/
 ### 인프라 (Terraform)
 ```
 infra/
-├── main.tf              # Provider, backend 설정
-├── variables.tf         # 변수 정의
-├── outputs.tf           # 출력값
-├── vpc.tf               # VPC 네트워크
-├── database.tf          # RDS (MySQL)
-├── lambda.tf            # Lambda 함수
-├── api-gateway.tf       # API Gateway
-└── s3-cloudfront.tf     # 프론트엔드 호스팅
+└── terraform/
+    ├── init/                    # Terraform state용 S3 + DynamoDB bootstrap
+    └── minimum/                 # 현재 운영 기준 최소 인프라
+        ├── env/
+        │   └── prod/            # prod 환경 진입점
+        ├── database.tf          # Neon Postgres
+        ├── ssm.tf               # SSM Parameter Store
+        ├── lambda.tf            # Backend / AI Lambda
+        ├── api-gateway.tf       # Backend / AI API Gateway
+        └── s3-cloudfront.tf     # 프론트엔드 호스팅
 ```
 
 ---
@@ -336,5 +353,5 @@ infra/
 
 ### 설정 관리
 - `JwtProperties` (@ConfigurationProperties) — 타입 안전한 JWT 설정
-- 프로파일 분리: `local` / `prod`
-
+- 프로파일 분리: `local` / `dev` / `prod`
+- DB 스키마 관리: Flyway (`backend/src/main/resources/db/migration`)

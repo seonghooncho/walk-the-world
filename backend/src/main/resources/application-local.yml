@@ -1,0 +1,24 @@
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: ${LOCAL_DB_URL:jdbc:postgresql://localhost:5432/walkworld}
+    username: ${LOCAL_DB_USERNAME:postgres}
+    password: ${LOCAL_DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    show-sql: true
+
+jwt:
+  secret: ${LOCAL_JWT_SECRET:walkworld-local-dev-secret-change-me}
+  access-token-expiry: 3600000
+  refresh-token-expiry: 604800000
+
+aws:
+  s3:
+    bucket: ${LOCAL_S3_BUCKET:walkworld-uploads-local}
+    region: ${LOCAL_AWS_REGION:ap-northeast-2}
+
+ai:
+  api-base-url: ${LOCAL_AI_API_BASE_URL:}
