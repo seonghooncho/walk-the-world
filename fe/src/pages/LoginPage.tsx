@@ -56,8 +56,8 @@ const LoginPage = () => {
         {/* Logo */}
         <div className="text-center">
           <div className="flex items-center justify-center gap-3">
-            <img src="/favicon.ico" alt="timelink logo" className="h-11 w-11 rounded-xl" />
-            <h1 className="text-3xl font-bold text-foreground">timelink</h1>
+            <img src="/brand-icon.svg" alt="걸어서 세계속으로 아이콘" className="h-12 w-12" />
+            <h1 className="text-2xl font-bold leading-tight text-foreground sm:text-3xl">걸어서 세계속으로</h1>
           </div>
           <p className="mt-2 text-sm text-muted-foreground">
             걸음으로 시간을 잇는 여행을 시작하세요

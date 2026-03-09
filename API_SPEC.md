@@ -1,4 +1,4 @@
-# timelink Backend API 명세서
+# 걸어서 세계속으로 Backend API 명세서
 
 > 버전: v1  
 > Base URL: `api/{domain}/v1`  

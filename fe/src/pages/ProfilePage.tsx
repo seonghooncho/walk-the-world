@@ -68,7 +68,7 @@ const ProfilePage = () => {
     { label: "내 게시물", action: () => setShowMyPosts(true) },
     { label: "배지 컬렉션", action: () => navigate("/profile/badges") },
     { label: "알림 설정", action: () => setShowSettings(true) },
-    { label: "도움말", action: () => toast.info("timelink@support.com 으로 문의해주세요") },
+    { label: "도움말", action: () => toast.info("서비스 지원 채널로 문의해주세요") },
     { label: "로그아웃", action: handleLogout },
   ];
 
