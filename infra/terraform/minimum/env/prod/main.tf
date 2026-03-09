@@ -33,8 +33,17 @@ provider "aws" {
   }
 }
 
+data "aws_ssm_parameter" "neon_api_key" {
+  name            = "/walkworld/prod/infra/NEON_API_KEY"
+  with_decryption = true
+}
+
+data "aws_ssm_parameter" "neon_org_id" {
+  name = "/walkworld/prod/infra/NEON_ORG_ID"
+}
+
 provider "neon" {
-  api_key = var.neon_api_key
+  api_key = data.aws_ssm_parameter.neon_api_key.value
 }
 
 module "platform" {
@@ -42,9 +51,11 @@ module "platform" {
 
   aws_region            = var.aws_region
   environment           = var.environment
+  frontend_platform     = var.frontend_platform
   project_name          = var.project_name
   db_name               = var.db_name
   db_username           = var.db_username
+  neon_org_id           = data.aws_ssm_parameter.neon_org_id.value
   neon_region_id        = var.neon_region_id
   neon_pg_version       = var.neon_pg_version
   jwt_secret            = var.jwt_secret
@@ -53,6 +64,6 @@ module "platform" {
   lambda_timeout        = var.lambda_timeout
   ai_lambda_memory      = var.ai_lambda_memory
   ai_lambda_timeout     = var.ai_lambda_timeout
-  lambda_package_path   = abspath("${path.root}/../../../../backend/build/distributions/walkworld-api.zip")
-  ai_lambda_source_path = abspath("${path.root}/../../../../ai/src")
+  lambda_package_path   = abspath("${path.root}/../../../../../backend/build/distributions/walkworld-api.zip")
+  ai_lambda_source_path = abspath("${path.root}/../../../../../ai/src")
 }

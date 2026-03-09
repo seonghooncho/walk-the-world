@@ -24,9 +24,19 @@ output "s3_bucket" {
   value       = aws_s3_bucket.uploads.id
 }
 
+output "frontend_bucket_name" {
+  description = "S3 bucket name for frontend hosting"
+  value       = aws_s3_bucket.frontend.id
+}
+
 output "cloudfront_domain" {
   description = "CloudFront distribution domain for frontend"
   value       = aws_cloudfront_distribution.frontend.domain_name
+}
+
+output "cloudfront_distribution_id" {
+  description = "CloudFront distribution id for frontend deployment invalidation"
+  value       = aws_cloudfront_distribution.frontend.id
 }
 
 output "ssm_parameter_names" {
@@ -37,9 +47,8 @@ output "ssm_parameter_names" {
     backend_db_password     = aws_ssm_parameter.backend_db_password.name
     backend_jwt_secret      = aws_ssm_parameter.backend_jwt_secret.name
     backend_s3_bucket       = aws_ssm_parameter.backend_s3_bucket.name
-    backend_aws_region      = aws_ssm_parameter.backend_aws_region.name
     backend_ai_api_base_url = aws_ssm_parameter.backend_ai_api_base_url.name
     frontend_api_base_url   = aws_ssm_parameter.frontend_api_base_url.name
-    frontend_google_client  = aws_ssm_parameter.frontend_google_client_id.name
+    frontend_google_client  = local.has_google_client_id ? aws_ssm_parameter.frontend_google_client_id[0].name : null
   }
 }

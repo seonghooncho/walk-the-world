@@ -19,19 +19,13 @@ resource "aws_ssm_parameter" "backend_db_password" {
 resource "aws_ssm_parameter" "backend_jwt_secret" {
   name  = "${local.ssm_prefix}/backend/JWT_SECRET"
   type  = "SecureString"
-  value = var.jwt_secret
+  value = local.effective_jwt_secret
 }
 
 resource "aws_ssm_parameter" "backend_s3_bucket" {
   name  = "${local.ssm_prefix}/backend/S3_BUCKET"
   type  = "String"
   value = aws_s3_bucket.uploads.id
-}
-
-resource "aws_ssm_parameter" "backend_aws_region" {
-  name  = "${local.ssm_prefix}/backend/AWS_REGION"
-  type  = "String"
-  value = var.aws_region
 }
 
 resource "aws_ssm_parameter" "backend_ai_api_base_url" {
@@ -47,6 +41,8 @@ resource "aws_ssm_parameter" "frontend_api_base_url" {
 }
 
 resource "aws_ssm_parameter" "frontend_google_client_id" {
+  count = local.has_google_client_id ? 1 : 0
+
   name  = "${local.ssm_prefix}/frontend/VITE_GOOGLE_CLIENT_ID"
   type  = "SecureString"
   value = var.google_client_id

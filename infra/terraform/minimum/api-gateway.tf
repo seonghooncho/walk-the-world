@@ -29,7 +29,7 @@ resource "aws_apigatewayv2_route" "backend_proxy" {
 
 resource "aws_apigatewayv2_stage" "backend" {
   api_id      = aws_apigatewayv2_api.backend.id
-  name        = var.environment
+  name        = "$default"
   auto_deploy = true
 
   access_log_settings {
@@ -81,7 +81,7 @@ resource "aws_apigatewayv2_route" "ai_proxy" {
 
 resource "aws_apigatewayv2_stage" "ai" {
   api_id      = aws_apigatewayv2_api.ai.id
-  name        = var.environment
+  name        = "$default"
   auto_deploy = true
 
   access_log_settings {

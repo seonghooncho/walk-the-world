@@ -332,6 +332,9 @@ infra/
         └── s3-cloudfront.tf     # 프론트엔드 호스팅
 ```
 
+- 프론트 호스팅 기준은 `aws_s3_cloudfront`
+- Cloudflare는 현재 호스팅 경로에 포함하지 않고, 미래 DNS 연결 시에만 선택적으로 추가
+
 ---
 
 ## 10. 백엔드 설계 패턴

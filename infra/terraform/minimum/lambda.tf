@@ -40,6 +40,13 @@ resource "aws_iam_role_policy" "backend_lambda_s3" {
   })
 }
 
+resource "aws_s3_object" "backend_lambda_zip" {
+  bucket = aws_s3_bucket.uploads.id
+  key    = "artifacts/backend/walkworld-api.zip"
+  source = local.lambda_package_path
+  etag   = filemd5(local.lambda_package_path)
+}
+
 resource "aws_lambda_function" "backend" {
   function_name = "${local.resource_prefix}-backend"
   role          = aws_iam_role.backend_lambda.arn
@@ -48,7 +55,8 @@ resource "aws_lambda_function" "backend" {
   memory_size   = var.lambda_memory
   timeout       = var.lambda_timeout
 
-  filename         = local.lambda_package_path
+  s3_bucket        = aws_s3_object.backend_lambda_zip.bucket
+  s3_key           = aws_s3_object.backend_lambda_zip.key
   source_code_hash = filebase64sha256(local.lambda_package_path)
 
   environment {
@@ -59,7 +67,6 @@ resource "aws_lambda_function" "backend" {
       DB_PASSWORD            = aws_ssm_parameter.backend_db_password.value
       JWT_SECRET             = aws_ssm_parameter.backend_jwt_secret.value
       S3_BUCKET              = aws_ssm_parameter.backend_s3_bucket.value
-      AWS_REGION             = aws_ssm_parameter.backend_aws_region.value
       AI_API_BASE_URL        = aws_ssm_parameter.backend_ai_api_base_url.value
     }
   }
@@ -114,7 +121,6 @@ resource "aws_lambda_function" "ai" {
     variables = {
       ENVIRONMENT = var.environment
       S3_BUCKET   = aws_s3_bucket.uploads.id
-      AWS_REGION  = var.aws_region
     }
   }
 
