@@ -1,6 +1,6 @@
 spring:
   application:
-    name: walkworld-api
+    name: timelink-api
 
   profiles:
     default: local

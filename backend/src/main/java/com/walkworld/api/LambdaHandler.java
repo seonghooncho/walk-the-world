@@ -21,7 +21,7 @@ public class LambdaHandler implements RequestStreamHandler {
 
     static {
         try {
-            handler = SpringBootLambdaContainerHandler.getHttpApiV2ProxyHandler(WalkWorldApplication.class);
+            handler = SpringBootLambdaContainerHandler.getHttpApiV2ProxyHandler(TimelinkApplication.class);
         } catch (ContainerInitializationException e) {
             throw new RuntimeException("Could not initialize Spring Boot application", e);
         }
