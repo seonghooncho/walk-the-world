@@ -1,0 +1,23 @@
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:mysql://localhost:3306/walkworld?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+
+jwt:
+  secret: local-dev-secret-key-must-be-at-least-256-bits-long-for-hs256
+  access-token-expiry: 3600000
+  refresh-token-expiry: 604800000
+
+aws:
+  s3:
+    bucket: walkworld-uploads-local
+    region: ap-northeast-2

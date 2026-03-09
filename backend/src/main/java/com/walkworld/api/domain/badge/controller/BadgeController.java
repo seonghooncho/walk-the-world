@@ -1,11 +1,11 @@
 package com.walkworld.api.domain.badge.controller;
 
-import com.walkworld.api.global.response.ApiResponse;
 import com.walkworld.api.domain.badge.dto.BadgeListResponse;
 import com.walkworld.api.domain.badge.dto.BadgeStatsResponse;
 import com.walkworld.api.domain.badge.service.BadgeService;
+import com.walkworld.api.global.auth.CurrentUserId;
+import com.walkworld.api.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -13,20 +13,18 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class BadgeController {
 
-    private final BadgeService badgeService;
+  private final BadgeService badgeService;
 
-    @GetMapping
-    public ApiResponse<BadgeListResponse> getBadges(
-            Authentication auth,
-            @RequestParam(required = false) String cityId,
-            @RequestParam(required = false) Boolean earned) {
-        Long userId = (Long) auth.getPrincipal();
-        return ApiResponse.ok(badgeService.getBadges(userId, cityId, earned));
-    }
+  @GetMapping
+  public ApiResponse<BadgeListResponse> getBadges(
+      @CurrentUserId Long userId,
+      @RequestParam(required = false) String cityId,
+      @RequestParam(required = false) Boolean earned) {
+    return ApiResponse.ok(badgeService.getBadges(userId, cityId, earned));
+  }
 
-    @GetMapping("/stats")
-    public ApiResponse<BadgeStatsResponse> getStats(Authentication auth) {
-        Long userId = (Long) auth.getPrincipal();
-        return ApiResponse.ok(badgeService.getStats(userId));
-    }
+  @GetMapping("/stats")
+  public ApiResponse<BadgeStatsResponse> getStats(@CurrentUserId Long userId) {
+    return ApiResponse.ok(badgeService.getStats(userId));
+  }
 }

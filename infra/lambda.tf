@@ -46,8 +46,8 @@ resource "aws_iam_role_policy" "lambda_dynamodb" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect   = "Allow"
-      Action   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:DeleteItem", "dynamodb:Query"]
+      Effect = "Allow"
+      Action = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:DeleteItem", "dynamodb:Query"]
       Resource = [
         aws_dynamodb_table.sessions.arn,
         aws_dynamodb_table.step_events.arn,
@@ -64,8 +64,8 @@ resource "aws_lambda_function" "api" {
   memory_size   = var.lambda_memory
   timeout       = var.lambda_timeout
 
-  filename         = "${path.module}/../backend/build/distributions/walkworld-api.zip"
-  source_code_hash = filebase64sha256("${path.module}/../backend/build/distributions/walkworld-api.zip")
+  filename         = local.lambda_package_path
+  source_code_hash = filebase64sha256(local.lambda_package_path)
 
   vpc_config {
     subnet_ids         = [aws_subnet.private_a.id, aws_subnet.private_b.id]

@@ -6,7 +6,7 @@ resource "aws_db_instance" "mysql" {
   identifier     = "${var.project_name}-mysql"
   engine         = "mysql"
   engine_version = "8.0"
-  instance_class = "db.t4g.micro"   # Free-tier eligible
+  instance_class = "db.t4g.micro" # Free-tier eligible
 
   allocated_storage     = 20
   max_allocated_storage = 50
@@ -37,7 +37,7 @@ resource "aws_db_instance" "mysql" {
 
 resource "aws_dynamodb_table" "sessions" {
   name         = "${var.project_name}-sessions"
-  billing_mode = "PAY_PER_REQUEST"   # No minimum cost when idle
+  billing_mode = "PAY_PER_REQUEST" # No minimum cost when idle
   hash_key     = "sessionId"
 
   attribute {

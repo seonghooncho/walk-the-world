@@ -35,7 +35,7 @@ resource "aws_s3_bucket_website_configuration" "frontend" {
   bucket = aws_s3_bucket.frontend.id
 
   index_document { suffix = "index.html" }
-  error_document { key = "index.html" }   # SPA routing
+  error_document { key = "index.html" } # SPA routing
 }
 
 resource "aws_s3_bucket_public_access_block" "frontend" {
@@ -72,7 +72,7 @@ resource "aws_cloudfront_origin_access_identity" "frontend" {
 resource "aws_cloudfront_distribution" "frontend" {
   enabled             = true
   default_root_object = "index.html"
-  price_class         = "PriceClass_200"   # Asia + NA + Europe
+  price_class         = "PriceClass_200" # Asia + NA + Europe
 
   origin {
     domain_name = aws_s3_bucket.frontend.bucket_regional_domain_name

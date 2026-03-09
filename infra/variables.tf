@@ -46,3 +46,9 @@ variable "lambda_timeout" {
   type        = number
   default     = 30
 }
+
+variable "lambda_package_path" {
+  description = "Path to the backend Lambda zip artifact"
+  type        = string
+  default     = null
+}
