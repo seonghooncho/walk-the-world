@@ -10,6 +10,12 @@ variable "environment" {
   default     = "prod"
 }
 
+variable "frontend_platform" {
+  description = "Frontend hosting platform"
+  type        = string
+  default     = "aws_s3_cloudfront"
+}
+
 variable "project_name" {
   description = "Project name prefix"
   type        = string
@@ -28,16 +34,10 @@ variable "db_username" {
   default     = "walkworld_app"
 }
 
-variable "neon_api_key" {
-  description = "Neon API key"
-  type        = string
-  sensitive   = true
-}
-
 variable "neon_region_id" {
   description = "Neon region id"
   type        = string
-  default     = "aws-ap-northeast-2"
+  default     = "aws-ap-southeast-1"
 }
 
 variable "neon_pg_version" {
@@ -47,21 +47,23 @@ variable "neon_pg_version" {
 }
 
 variable "jwt_secret" {
-  description = "JWT signing secret (min 256 bits)"
+  description = "Optional JWT signing secret override"
   type        = string
   sensitive   = true
+  default     = null
 }
 
 variable "google_client_id" {
-  description = "Google OAuth client id"
+  description = "Optional Google OAuth client id"
   type        = string
   sensitive   = true
+  default     = ""
 }
 
 variable "lambda_memory" {
   description = "Lambda memory in MB"
   type        = number
-  default     = 512
+  default     = 1536
 }
 
 variable "lambda_timeout" {

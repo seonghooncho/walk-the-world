@@ -6,7 +6,7 @@ TERRAFORM ?= terraform
 ENV ?= prod
 
 .PHONY: help fe-install fe-dev fe-build fe-lint fe-test fe-check \
-	fe-build-ssm \
+	fe-build-ssm fe-deploy-prod \
 	be-build be-test be-zip be-generate-reference-seed \
 	infra-fmt infra-init-validate infra-validate-prod
 
@@ -16,6 +16,7 @@ help:
 		'fe-dev             Run frontend dev server' \
 		'fe-build           Build frontend' \
 		'fe-build-ssm       Build frontend with Vite vars loaded from SSM (ENV=prod)' \
+		'fe-deploy-prod     Build frontend, sync to S3, and invalidate CloudFront' \
 		'fe-lint            Lint frontend' \
 		'fe-test            Run frontend tests' \
 		'fe-check           Run frontend lint, test, and build' \
@@ -38,6 +39,9 @@ fe-build:
 
 fe-build-ssm:
 	bin/fe-build-from-ssm.sh $(ENV)
+
+fe-deploy-prod:
+	bin/fe-deploy-to-aws.sh prod
 
 fe-lint:
 	cd fe && $(NPM) run lint

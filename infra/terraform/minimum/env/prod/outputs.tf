@@ -18,9 +18,19 @@ output "s3_bucket" {
   value       = module.platform.s3_bucket
 }
 
+output "frontend_bucket_name" {
+  description = "S3 bucket for frontend hosting"
+  value       = module.platform.frontend_bucket_name
+}
+
 output "cloudfront_domain" {
   description = "CloudFront distribution domain for frontend"
   value       = module.platform.cloudfront_domain
+}
+
+output "cloudfront_distribution_id" {
+  description = "CloudFront distribution id for frontend"
+  value       = module.platform.cloudfront_distribution_id
 }
 
 output "ssm_parameter_names" {

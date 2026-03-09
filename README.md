@@ -42,6 +42,7 @@ make infra-validate-prod
 make fe-install
 make fe-dev
 make fe-build-ssm ENV=prod
+make fe-deploy-prod
 ```
 
 검증 명령:
@@ -85,7 +86,43 @@ make infra-validate-prod
 - `infra/terraform/init`: state bucket과 lock table bootstrap
 - `infra/terraform/minimum`: `CloudFront -> S3` 프론트, `API Gateway -> Lambda` 백엔드/AI, Neon Postgres, SSM Parameter Store
 - `infra/terraform/minimum/env/prod`: 단일 운영 진입점
+- `frontend_platform`은 현재 `aws_s3_cloudfront`로 고정한다.
+- Cloudflare는 현재 배포 경로에 포함하지 않고, 향후 커스텀 도메인 DNS 연결이 필요할 때만 별도 도입한다.
 - 환경변수 값은 Git에 두지 않고 SSM Parameter Store 기준으로 관리한다.
+
+## 현재 배포 최소 입력값
+
+현재 `prod` apply에 직접 필요한 로컬 입력값은 아래 한 가지다.
+
+```sh
+export AWS_PROFILE=<aws-profile>
+```
+
+사전 준비값은 SSM Parameter Store에 둔다.
+
+```text
+/walkworld/prod/infra/NEON_API_KEY
+/walkworld/prod/infra/NEON_ORG_ID
+```
+
+선택 입력값:
+
+```sh
+export TF_VAR_google_client_id=<google-oauth-client-id>
+export TF_VAR_jwt_secret=<custom-jwt-secret>
+```
+
+- `google_client_id`를 비워두면 Google 로그인 버튼은 비활성 안내 상태로 동작한다.
+- `jwt_secret`를 비워두면 Terraform이 안전한 랜덤 값을 생성해 SSM에 저장한다.
+
+## 현재 배포 순서
+
+```sh
+make infra-init-validate
+make be-zip
+terraform -chdir=infra/terraform/minimum/env/prod apply
+make fe-deploy-prod
+```
 
 ## 협업 기준
 

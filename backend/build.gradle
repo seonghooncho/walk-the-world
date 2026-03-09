@@ -65,9 +65,12 @@ tasks.named('test') {
 
 // Lambda deployment: build a thin jar
 tasks.register('buildZip', Zip) {
+    archiveFileName = 'walkworld-api.zip'
     from compileJava
     from processResources
     into('lib') {
-        from configurations.runtimeClasspath
+        from(configurations.runtimeClasspath) {
+            exclude 'spring-boot-devtools-*.jar'
+        }
     }
 }
