@@ -14,6 +14,11 @@ dist-ssr
 backend/.gradle/
 backend/build/
 infra/**/.terraform/
+.omx/
+.env
+.env.*
+*.tfvars
+*.auto.tfvars
 
 # Editor directories and files
 .vscode/*

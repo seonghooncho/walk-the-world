@@ -16,8 +16,10 @@
 - `fe/src/mocks`: 데모/목 데이터
 - `fe/src/lib/api`, `fe/src/hooks/api`: API 클라이언트와 React Query 훅
 - `backend/`: Spring Boot 기반 API 서버
-- `infra/`: 재사용 가능한 Terraform 베이스 모듈
-- `infra/env/dev`, `infra/env/prod`: 환경별 Terraform 진입점
+- `ai/`: AI 합성 전용 Lambda 소스
+- `infra/terraform/init`: Terraform state용 S3 + DynamoDB bootstrap
+- `infra/terraform/minimum`: 현재 운영 인프라 기준 Terraform 베이스 모듈
+- `infra/terraform/minimum/env/dev`, `infra/terraform/minimum/env/prod`: 환경별 Terraform 진입점
 - `bin/`: 보조 스크립트
 - `DESIGN_GUIDE.md`: 프론트엔드 UI/UX 시스템 가이드
 - `API_SPEC.md`: 백엔드 API 명세
@@ -39,6 +41,7 @@ make infra-validate-dev
 ```sh
 make fe-install
 make fe-dev
+make fe-build-ssm ENV=dev
 ```
 
 검증 명령:
@@ -54,31 +57,41 @@ make fe-check
 ```sh
 make be-test
 make be-zip
+make be-generate-reference-seed
 ```
 
-프로필 설정은 아래 파일로 분리되어 있다.
+`make be-generate-reference-seed`는 [V2__seed_reference_data.sql](/Users/cho/IdeaProjects/walk-the-world/backend/src/main/resources/db/migration/V2__seed_reference_data.sql)을 갱신한다.
+
+프로필과 DB 마이그레이션은 아래 파일 기준으로 관리한다.
 
 ```text
 backend/src/main/resources/application.yml
 backend/src/main/resources/application-local.yml
+backend/src/main/resources/application-dev.yml
 backend/src/main/resources/application-prod.yml
+backend/src/main/resources/db/migration/
 ```
 
 ## 인프라 작업
 
-Terraform은 루트 `infra/`를 베이스 모듈로 두고, 실제 실행은 `infra/env/*`에서 수행한다.
+Terraform은 `init`과 실제 서비스 인프라를 분리한다.
 
 ```sh
 make infra-fmt
+make infra-init-validate
 make infra-validate-dev
 make infra-validate-prod
 ```
+
+- `infra/terraform/init`: state bucket과 lock table bootstrap
+- `infra/terraform/minimum`: `CloudFront -> S3` 프론트, `API Gateway -> Lambda` 백엔드/AI, Neon Postgres, SSM Parameter Store
+- 환경변수 값은 Git에 두지 않고 SSM Parameter Store 기준으로 관리한다.
 
 ## 협업 기준
 
 - 프론트엔드 변경은 기본적으로 `fe/` 안에서 끝나도록 유지한다.
 - 백엔드는 도메인 경계를 유지하되, 인터페이스/구현체 1:1 분리는 남용하지 않는다.
 - 서버 상태는 React Query, UI/임시 상태는 Zustand로 분리한다.
-- 인프라 변경은 `infra/env/*` 기준으로 검증하고 환경별 상태 파일을 분리한다.
+- 인프라 변경은 `infra/terraform/minimum/env/*` 기준으로 검증하고, state bootstrap은 `infra/terraform/init`에서 따로 관리한다.
 - 구조 변경 시 README와 관련 가이드 문서의 경로 설명을 함께 갱신한다.
 - 루트 디렉터리에서는 제품 영역 경계가 한눈에 보이도록 유지한다.

@@ -3,23 +3,28 @@ SHELL := /bin/bash
 NPM ?= npm
 GRADLE ?= gradle
 TERRAFORM ?= terraform
+ENV ?= dev
 
 .PHONY: help fe-install fe-dev fe-build fe-lint fe-test fe-check \
-	be-build be-test be-zip \
-	infra-fmt infra-validate-dev infra-validate-prod
+	fe-build-ssm \
+	be-build be-test be-zip be-generate-reference-seed \
+	infra-fmt infra-init-validate infra-validate-dev infra-validate-prod
 
 help:
 	@printf '%s\n' \
 		'fe-install         Install frontend dependencies' \
 		'fe-dev             Run frontend dev server' \
 		'fe-build           Build frontend' \
+		'fe-build-ssm       Build frontend with Vite vars loaded from SSM (ENV=dev|prod)' \
 		'fe-lint            Lint frontend' \
 		'fe-test            Run frontend tests' \
 		'fe-check           Run frontend lint, test, and build' \
 		'be-build           Build backend' \
 		'be-test            Run backend tests' \
 		'be-zip             Build backend Lambda zip' \
+		'be-generate-reference-seed Generate Flyway seed SQL from frontend world data' \
 		'infra-fmt          Format Terraform files' \
+		'infra-init-validate Validate Terraform bootstrap module' \
 		'infra-validate-dev Validate Terraform for dev env' \
 		'infra-validate-prod Validate Terraform for prod env'
 
@@ -31,6 +36,9 @@ fe-dev:
 
 fe-build:
 	cd fe && $(NPM) run build
+
+fe-build-ssm:
+	bin/fe-build-from-ssm.sh $(ENV)
 
 fe-lint:
 	cd fe && $(NPM) run lint
@@ -49,13 +57,21 @@ be-test:
 be-zip:
 	cd backend && $(GRADLE) buildZip
 
+be-generate-reference-seed:
+	node bin/generate-reference-seed.mjs
+
 infra-fmt:
-	$(TERRAFORM) -chdir=infra fmt -recursive
+	$(TERRAFORM) -chdir=infra/terraform/init fmt -recursive
+	$(TERRAFORM) -chdir=infra/terraform/minimum fmt -recursive
+
+infra-init-validate:
+	$(TERRAFORM) -chdir=infra/terraform/init init -backend=false
+	$(TERRAFORM) -chdir=infra/terraform/init validate
 
 infra-validate-dev:
-	$(TERRAFORM) -chdir=infra/env/dev init -backend=false
-	$(TERRAFORM) -chdir=infra/env/dev validate
+	$(TERRAFORM) -chdir=infra/terraform/minimum/env/dev init -backend=false
+	$(TERRAFORM) -chdir=infra/terraform/minimum/env/dev validate
 
 infra-validate-prod:
-	$(TERRAFORM) -chdir=infra/env/prod init -backend=false
-	$(TERRAFORM) -chdir=infra/env/prod validate
+	$(TERRAFORM) -chdir=infra/terraform/minimum/env/prod init -backend=false
+	$(TERRAFORM) -chdir=infra/terraform/minimum/env/prod validate

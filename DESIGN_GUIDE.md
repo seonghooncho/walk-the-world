@@ -320,16 +320,17 @@ backend/src/main/java/com/walkworld/api/
 ### 인프라 (Terraform)
 ```
 infra/
-├── main.tf              # 재사용 가능한 베이스 모듈 정의
-├── variables.tf         # 모듈 변수 정의
-├── env/
-│   ├── dev/             # dev 환경 진입점
-│   └── prod/            # prod 환경 진입점
-├── vpc.tf               # VPC 네트워크
-├── database.tf          # RDS (MySQL)
-├── lambda.tf            # Lambda 함수
-├── api-gateway.tf       # API Gateway
-└── s3-cloudfront.tf     # 프론트엔드 호스팅
+└── terraform/
+    ├── init/                    # Terraform state용 S3 + DynamoDB bootstrap
+    └── minimum/                 # 현재 운영 기준 최소 인프라
+        ├── env/
+        │   ├── dev/             # dev 환경 진입점
+        │   └── prod/            # prod 환경 진입점
+        ├── database.tf          # Neon Postgres
+        ├── ssm.tf               # SSM Parameter Store
+        ├── lambda.tf            # Backend / AI Lambda
+        ├── api-gateway.tf       # Backend / AI API Gateway
+        └── s3-cloudfront.tf     # 프론트엔드 호스팅
 ```
 
 ---
@@ -353,4 +354,5 @@ infra/
 
 ### 설정 관리
 - `JwtProperties` (@ConfigurationProperties) — 타입 안전한 JWT 설정
-- 프로파일 분리: `local` / `prod`
+- 프로파일 분리: `local` / `dev` / `prod`
+- DB 스키마 관리: Flyway (`backend/src/main/resources/db/migration`)

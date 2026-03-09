@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +35,7 @@ public class MissionService {
   private final PostRepository postRepository;
   private final BadgeService badgeService;
   private final S3Service s3Service;
+  private final AiCompositeClient aiCompositeClient;
 
   @Transactional(readOnly = true)
   public Map<String, List<MissionResponse>> getMissions(
@@ -139,24 +141,37 @@ public class MissionService {
       throw new MissionException(MissionErrorCode.NOT_AI_MISSION);
     }
 
-    String compositeKey = "composite/" + missionId + "_" + userId + ".jpg";
+    String compositeKey = "composite/generated/" + missionId + "_" + userId + ".jpg";
+    String resolvedCompositeKey = compositeKey;
+    String resolvedPrompt = mission.getAiPrompt();
+
+    if (aiCompositeClient.isConfigured()) {
+      AiCompositeClient.CompositeResult result =
+          aiCompositeClient.composite(imageKey, compositeKey, mission.getAiPrompt());
+      resolvedCompositeKey = result.outputKey();
+      if (StringUtils.hasText(result.prompt())) {
+        resolvedPrompt = result.prompt();
+      }
+    } else {
+      s3Service.copyObject(imageKey, compositeKey);
+    }
 
     UserMission um =
         userMissionRepository
             .findByUserIdAndMissionId(userId, missionId)
             .orElse(UserMission.builder().userId(userId).missionId(missionId).build());
-    um.setCompositeImageUrl(compositeKey);
+    um.setCompositeImageUrl(resolvedCompositeKey);
     userMissionRepository.save(um);
 
     return CompositeResponse.builder()
         .missionId(missionId)
         .compositeImage(
             CompositeResponse.CompositeImage.builder()
-                .url(s3Service.generateDownloadUrl(compositeKey))
-                .thumbnailUrl(s3Service.generateDownloadUrl(compositeKey))
+                .url(s3Service.generateDownloadUrl(resolvedCompositeKey))
+                .thumbnailUrl(s3Service.generateDownloadUrl(resolvedCompositeKey))
                 .width(1024)
                 .height(1024)
-                .prompt(mission.getAiPrompt())
+                .prompt(resolvedPrompt)
                 .build())
         .expiresAt(LocalDateTime.now().plusHours(1))
         .build();

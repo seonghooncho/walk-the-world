@@ -40,10 +40,10 @@ resource "aws_s3_bucket_website_configuration" "frontend" {
 
 resource "aws_s3_bucket_public_access_block" "frontend" {
   bucket                  = aws_s3_bucket.frontend.id
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
 resource "aws_s3_bucket_policy" "frontend" {
@@ -66,7 +66,7 @@ resource "aws_s3_bucket_policy" "frontend" {
 # ============================================================
 
 resource "aws_cloudfront_origin_access_identity" "frontend" {
-  comment = "${var.project_name} frontend"
+  comment = "${local.resource_prefix} frontend"
 }
 
 resource "aws_cloudfront_distribution" "frontend" {
@@ -120,5 +120,5 @@ resource "aws_cloudfront_distribution" "frontend" {
     cloudfront_default_certificate = true
   }
 
-  tags = { Name = "${var.project_name}-frontend-cdn" }
+  tags = { Name = "${local.resource_prefix}-frontend-cdn" }
 }

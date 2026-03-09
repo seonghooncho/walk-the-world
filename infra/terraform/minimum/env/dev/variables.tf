@@ -1,0 +1,83 @@
+variable "aws_region" {
+  description = "AWS region"
+  type        = string
+  default     = "ap-northeast-2"
+}
+
+variable "environment" {
+  description = "Environment name"
+  type        = string
+  default     = "dev"
+}
+
+variable "project_name" {
+  description = "Project name prefix"
+  type        = string
+  default     = "walkworld"
+}
+
+variable "db_name" {
+  description = "Application database name"
+  type        = string
+  default     = "walkworld"
+}
+
+variable "db_username" {
+  description = "Application database role name"
+  type        = string
+  default     = "walkworld_app"
+}
+
+variable "neon_api_key" {
+  description = "Neon API key"
+  type        = string
+  sensitive   = true
+}
+
+variable "neon_region_id" {
+  description = "Neon region id"
+  type        = string
+  default     = "aws-ap-northeast-2"
+}
+
+variable "neon_pg_version" {
+  description = "Postgres major version for Neon"
+  type        = number
+  default     = 16
+}
+
+variable "jwt_secret" {
+  description = "JWT signing secret (min 256 bits)"
+  type        = string
+  sensitive   = true
+}
+
+variable "google_client_id" {
+  description = "Google OAuth client id"
+  type        = string
+  sensitive   = true
+}
+
+variable "lambda_memory" {
+  description = "Lambda memory in MB"
+  type        = number
+  default     = 512
+}
+
+variable "lambda_timeout" {
+  description = "Lambda timeout in seconds"
+  type        = number
+  default     = 30
+}
+
+variable "ai_lambda_memory" {
+  description = "AI Lambda memory in MB"
+  type        = number
+  default     = 256
+}
+
+variable "ai_lambda_timeout" {
+  description = "AI Lambda timeout in seconds"
+  type        = number
+  default     = 15
+}

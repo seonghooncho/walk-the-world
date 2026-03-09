@@ -3,9 +3,14 @@ output "api_gateway_url" {
   value       = module.platform.api_gateway_url
 }
 
-output "rds_endpoint" {
-  description = "RDS MySQL endpoint"
-  value       = module.platform.rds_endpoint
+output "ai_api_gateway_url" {
+  description = "AI API Gateway invoke URL"
+  value       = module.platform.ai_api_gateway_url
+}
+
+output "neon_project_id" {
+  description = "Neon project id"
+  value       = module.platform.neon_project_id
 }
 
 output "s3_bucket" {
@@ -16,4 +21,9 @@ output "s3_bucket" {
 output "cloudfront_domain" {
   description = "CloudFront distribution domain for frontend"
   value       = module.platform.cloudfront_domain
+}
+
+output "ssm_parameter_names" {
+  description = "SSM parameter names"
+  value       = module.platform.ssm_parameter_names
 }

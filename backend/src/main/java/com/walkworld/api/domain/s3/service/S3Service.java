@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -81,9 +82,32 @@ public class S3Service {
     return s3Presigner.presignGetObject(presignRequest).url().toString();
   }
 
+  public String resolvePublicUrl(String value) {
+    if (value == null || value.isBlank()) {
+      return null;
+    }
+    if (value.startsWith("http://") || value.startsWith("https://")) {
+      return value;
+    }
+    return generateDownloadUrl(value);
+  }
+
   public void deleteObject(String key) {
     if (key == null || key.isBlank()) return;
     s3Client.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(key).build());
+  }
+
+  public void copyObject(String sourceKey, String targetKey) {
+    if (sourceKey == null || sourceKey.isBlank() || targetKey == null || targetKey.isBlank()) {
+      return;
+    }
+
+    s3Client.copyObject(
+        CopyObjectRequest.builder()
+            .copySource(bucket + "/" + sourceKey)
+            .bucket(bucket)
+            .key(targetKey)
+            .build());
   }
 
   public boolean isAllowedExtension(String filename) {
