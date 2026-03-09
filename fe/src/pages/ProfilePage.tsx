@@ -1,8 +1,6 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import {
-  Settings, ChevronRight, Footprints, Globe, Users, QrCode, ScanLine, Award,
-} from "lucide-react";
+import { Award, ChevronRight, Footprints, Globe, QrCode, ScanLine, Settings, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import UserAvatar from "@/components/shared/UserAvatar";
@@ -12,7 +10,8 @@ import QRCodeModal from "@/components/shared/QRCodeModal";
 import QRScannerModal from "@/components/shared/QRScannerModal";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMe } from "@/hooks/useApi";
+import { useLogout, useMe, useStepInfo } from "@/hooks/useApi";
+import { findCityById, getProgressPercent, getStaticCities } from "@/lib/city-utils";
 import { toast } from "sonner";
 
 const ProfilePage = () => {
@@ -21,18 +20,22 @@ const ProfilePage = () => {
   const [showQR, setShowQR] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const navigate = useNavigate();
-  const { logout, isLoggedIn, requireLogin } = useAuth();
+  const { isLoggedIn, requireLogin } = useAuth();
   const { data: user, isLoading } = useMe();
+  const { data: stepInfo } = useStepInfo();
+  const logout = useLogout();
+  const cities = useMemo(() => getStaticCities(), []);
+  const currentCity = findCityById(cities, user?.currentCityId ?? null);
+  const progress = user ? getProgressPercent(cities, user.totalSteps, user.currentCityId) : 50;
 
-  // Require login
   useEffect(() => {
     if (!isLoggedIn) {
       requireLogin();
     }
   }, [isLoggedIn, requireLogin]);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout.mutateAsync();
     toast.success("로그아웃 되었습니다");
     navigate("/login");
   };
@@ -40,8 +43,8 @@ const ProfilePage = () => {
   if (!isLoggedIn) {
     return (
       <AppLayout>
-        <div className="flex items-center justify-center h-[60vh]">
-          <p className="text-muted-foreground text-sm">로그인이 필요합니다</p>
+        <div className="flex h-[60vh] items-center justify-center">
+          <p className="text-sm text-muted-foreground">로그인이 필요합니다</p>
         </div>
       </AppLayout>
     );
@@ -50,7 +53,7 @@ const ProfilePage = () => {
   if (isLoading || !user) {
     return (
       <AppLayout>
-        <div className="flex items-center justify-center h-[60vh]">
+        <div className="flex h-[60vh] items-center justify-center">
           <LoadingSpinner />
         </div>
       </AppLayout>
@@ -59,9 +62,9 @@ const ProfilePage = () => {
 
   const stats = [
     { icon: Footprints, label: "총 걸음 수", value: user.totalSteps.toLocaleString() },
-    { icon: Globe, label: "현재 도시", value: user.currentCityId },
+    { icon: Globe, label: "현재 도시", value: currentCity ? `${currentCity.countryFlag} ${currentCity.name}` : user.currentCityId },
     { icon: Users, label: "친구", value: `${user.friendCount}명` },
-    { icon: Award, label: "쿠폰", value: `${user.coupons}개` },
+    { icon: Award, label: "재화", value: `쿠폰 ${user.coupons}개 / 하트 ${user.hearts}개` },
   ];
 
   const menuItems = [
@@ -74,8 +77,7 @@ const ProfilePage = () => {
 
   return (
     <AppLayout>
-      {/* Header */}
-      <div className="bg-card px-4 pb-8 pt-12 border-b border-border">
+      <div className="border-b border-border bg-card px-4 pb-8 pt-12">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-lg font-bold text-foreground">프로필</h1>
           <button onClick={() => setShowSettings(true)} className="text-muted-foreground">
@@ -83,21 +85,16 @@ const ProfilePage = () => {
           </button>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex flex-col items-center"
-        >
-          <StepProgressRing progress={0.5} size={110} strokeWidth={5}>
-            <UserAvatar name={user.name} size="lg" />
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center">
+          <StepProgressRing progress={stepInfo ? stepInfo.progressPercent : progress} size={110} strokeWidth={5}>
+            <UserAvatar name={user.name} avatar={user.avatarUrl ?? undefined} size="lg" />
           </StepProgressRing>
           <h2 className="mt-3 text-lg font-bold text-foreground">{user.name}</h2>
           <p className="text-[13px] text-muted-foreground">
-            {user.currentCityId}에서 여행 중
+            {currentCity ? `${currentCity.countryFlag} ${currentCity.name}에서 여행 중` : `${user.currentCityId}에서 여행 중`}
           </p>
         </motion.div>
 
-        {/* QR Buttons */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -122,14 +119,13 @@ const ProfilePage = () => {
       </div>
 
       <div className="space-y-4 p-4">
-        {/* Stats grid */}
         <div className="grid grid-cols-2 gap-2.5">
-          {stats.map((stat, i) => (
+          {stats.map((stat, index) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.06 }}
+              transition={{ delay: index * 0.06 }}
               className="rounded-xl bg-card p-4"
             >
               <stat.icon className="mb-1.5 h-4 w-4 text-muted-foreground" />
@@ -139,12 +135,11 @@ const ProfilePage = () => {
           ))}
         </div>
 
-        {/* Menu */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="space-y-px rounded-xl overflow-hidden"
+          className="space-y-px overflow-hidden rounded-xl"
         >
           {menuItems.map((item) => (
             <button
@@ -159,7 +154,7 @@ const ProfilePage = () => {
         </motion.div>
       </div>
 
-      <SettingsSheet open={showSettings} onClose={() => setShowSettings(false)} />
+      <SettingsSheet open={showSettings} onClose={() => setShowSettings(false)} onLogout={handleLogout} />
       <MyPostsSheet open={showMyPosts} onClose={() => setShowMyPosts(false)} />
       <QRCodeModal open={showQR} onClose={() => setShowQR(false)} />
       <QRScannerModal open={showScanner} onClose={() => setShowScanner(false)} />

@@ -20,11 +20,20 @@ export function useUpdateProfile() {
   });
 }
 
+export function usePublicProfile(userId: number) {
+  return useQuery({
+    queryKey: ["publicProfile", userId],
+    queryFn: async () => (await userApi.getUser(userId)).data,
+    enabled: isAuthenticated() && Number.isFinite(userId) && userId > 0,
+  });
+}
+
 export function useStepInfo() {
   return useQuery({
     queryKey: ["steps"],
     queryFn: async () => (await stepsApi.get()).data,
     staleTime: 60_000,
+    enabled: isAuthenticated(),
   });
 }
 
@@ -46,5 +55,6 @@ export function useCurrency() {
     queryKey: ["currency"],
     queryFn: async () => (await currencyApi.getBalance()).data,
     staleTime: 30_000,
+    enabled: isAuthenticated(),
   });
 }

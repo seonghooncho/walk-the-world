@@ -2,10 +2,14 @@ package com.walkworld.api.domain.chat.service;
 
 import com.walkworld.api.domain.chat.dto.ChatMessageResponse;
 import com.walkworld.api.domain.chat.dto.ChatRoomResponse;
+import com.walkworld.api.domain.chat.error.ChatErrorCode;
+import com.walkworld.api.domain.chat.error.ChatException;
 import com.walkworld.api.domain.chat.entity.ChatMessage;
 import com.walkworld.api.domain.chat.entity.ChatRoom;
 import com.walkworld.api.domain.chat.repository.ChatMessageRepository;
 import com.walkworld.api.domain.chat.repository.ChatRoomRepository;
+import com.walkworld.api.domain.friend.repository.FriendshipRepository;
+import com.walkworld.api.domain.s3.service.S3Service;
 import com.walkworld.api.domain.user.entity.User;
 import com.walkworld.api.domain.user.repository.UserRepository;
 import com.walkworld.api.global.pagination.Cursor;
@@ -25,31 +29,38 @@ public class ChatService {
 
   private final ChatRoomRepository roomRepository;
   private final ChatMessageRepository messageRepository;
+  private final FriendshipRepository friendshipRepository;
   private final UserRepository userRepository;
+  private final S3Service s3Service;
   private final CursorCodec cursorCodec;
 
   @Transactional(readOnly = true)
   public List<ChatRoomResponse> getRooms(Long userId) {
     return roomRepository.findByUser(userId).stream()
-        .map(
-            room -> {
-              Long friendId =
-                  room.getUser1Id().equals(userId) ? room.getUser2Id() : room.getUser1Id();
-              User friend = userRepository.findById(friendId).orElse(null);
-              long unread =
-                  messageRepository.countByRoomIdAndSenderIdNotAndIsReadFalse(room.getId(), userId);
-
-              return ChatRoomResponse.builder()
-                  .id(room.getId())
-                  .friendId(friendId)
-                  .friendName(friend != null ? friend.getName() : "Unknown")
-                  .friendAvatar(friend != null ? friend.getAvatarUrl() : null)
-                  .lastMessage(room.getLastMessage())
-                  .lastMessageAt(room.getLastMessageAt())
-                  .unreadCount(unread)
-                  .build();
-            })
+        .map(room -> toRoomResponse(userId, room))
         .toList();
+  }
+
+  public ChatRoomResponse getOrCreateRoom(Long userId, Long friendId) {
+    if (userId.equals(friendId)) {
+      throw new ChatException(ChatErrorCode.SELF_CHAT_NOT_ALLOWED);
+    }
+    if (!friendshipRepository.existsByUserIdAndFriendId(userId, friendId)) {
+      throw new ChatException(ChatErrorCode.CHAT_FORBIDDEN);
+    }
+
+    ChatRoom room =
+        roomRepository
+            .findByPair(userId, friendId)
+            .orElseGet(
+                () -> {
+                  long user1Id = Math.min(userId, friendId);
+                  long user2Id = Math.max(userId, friendId);
+                  return roomRepository.save(
+                      ChatRoom.builder().user1Id(user1Id).user2Id(user2Id).build());
+                });
+
+    return toRoomResponse(userId, room);
   }
 
   @Transactional(readOnly = true)
@@ -89,7 +100,7 @@ public class ChatService {
     ChatRoom room =
         roomRepository
             .findById(roomId)
-            .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다"));
+            .orElseThrow(() -> new ChatException(ChatErrorCode.CHAT_ROOM_NOT_FOUND));
 
     ChatMessage msg =
         ChatMessage.builder().roomId(roomId).senderId(userId).content(content).build();
@@ -104,6 +115,23 @@ public class ChatService {
 
   public void markAsRead(Long userId, Long roomId) {
     messageRepository.markAsRead(roomId, userId);
+  }
+
+  private ChatRoomResponse toRoomResponse(Long userId, ChatRoom room) {
+    Long friendId = room.getUser1Id().equals(userId) ? room.getUser2Id() : room.getUser1Id();
+    User friend = userRepository.findById(friendId).orElse(null);
+    long unread =
+        messageRepository.countByRoomIdAndSenderIdNotAndIsReadFalse(room.getId(), userId);
+
+    return ChatRoomResponse.builder()
+        .id(room.getId())
+        .friendId(friendId)
+        .friendName(friend != null ? friend.getName() : "Unknown")
+        .friendAvatar(friend != null ? s3Service.resolvePublicUrl(friend.getAvatarUrl()) : null)
+        .lastMessage(room.getLastMessage())
+        .lastMessageAt(room.getLastMessageAt())
+        .unreadCount(unread)
+        .build();
   }
 
   private ChatMessageResponse toResponse(ChatMessage m) {

@@ -3,39 +3,42 @@ import { Heart, Ticket, UserPlus, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import UserAvatar from "./UserAvatar";
 import LoadingSpinner from "./LoadingSpinner";
-import type { UserProfile } from "@/mocks/mockData";
-import { useAppStore } from "@/stores/appStore";
+import { useAddFriend, useCurrency } from "@/hooks/useApi";
+import type { UiProfile } from "@/lib/city-utils";
 import { toast } from "sonner";
 
 interface FriendAddModalProps {
-  targetUser: UserProfile | null;
+  targetUser: UiProfile | null;
   sameCityCost: boolean;
   onClose: () => void;
 }
 
 const FriendAddModal = ({ targetUser, sameCityCost, onClose }: FriendAddModalProps) => {
   const [adding, setAdding] = useState(false);
-  const addFriend = useAppStore((s) => s.addFriend);
-  const coupons = useAppStore((s) => s.coupons);
-  const hearts = useAppStore((s) => s.hearts);
+  const addFriend = useAddFriend();
+  const { data: currency } = useCurrency();
+  const coupons = currency?.coupons ?? 0;
+  const hearts = currency?.hearts ?? 0;
 
   if (!targetUser) return null;
 
   const costLabel = sameCityCost ? "쿠폰 1장" : "하트 2개";
   const hasEnough = sameCityCost ? coupons >= 1 : hearts >= 2;
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     setAdding(true);
-    setTimeout(() => {
-      const result = addFriend(targetUser.id, sameCityCost);
-      if (result.success) {
-        toast.success(result.message);
-      } else {
-        toast.error(result.message);
-      }
-      setAdding(false);
+    try {
+      await addFriend.mutateAsync({
+        friendId: targetUser.id,
+        method: sameCityCost ? "same_city" : "different_city",
+      });
+      toast.success("친구가 되었습니다");
       onClose();
-    }, 600);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "친구 추가에 실패했습니다");
+    } finally {
+      setAdding(false);
+    }
   };
 
   return (
@@ -55,7 +58,7 @@ const FriendAddModal = ({ targetUser, sameCityCost, onClose }: FriendAddModalPro
           className="w-full max-w-sm rounded-3xl bg-card p-6 shadow-elevated"
         >
           <div className="flex flex-col items-center text-center">
-            <UserAvatar name={targetUser.name} size="lg" />
+            <UserAvatar name={targetUser.name} avatar={targetUser.avatarUrl ?? undefined} size="lg" />
             <h3 className="mt-3 text-lg font-bold text-card-foreground">{targetUser.name}</h3>
             <p className="text-xs text-muted-foreground">친구 요청을 보낼까요?</p>
           </div>

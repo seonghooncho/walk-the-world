@@ -18,6 +18,7 @@ public class CompositeResponse {
     @Builder
     @AllArgsConstructor
     public static class CompositeImage {
+        private String key;
         private String url;
         private String thumbnailUrl;
         private Integer width;

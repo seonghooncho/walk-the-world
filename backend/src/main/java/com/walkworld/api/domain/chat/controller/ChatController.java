@@ -2,6 +2,7 @@ package com.walkworld.api.domain.chat.controller;
 
 import com.walkworld.api.domain.chat.dto.ChatMessageResponse;
 import com.walkworld.api.domain.chat.dto.ChatRoomResponse;
+import com.walkworld.api.domain.chat.dto.CreateChatRoomRequest;
 import com.walkworld.api.domain.chat.dto.SendMessageRequest;
 import com.walkworld.api.domain.chat.service.ChatService;
 import com.walkworld.api.global.auth.CurrentUserId;
@@ -22,6 +23,13 @@ public class ChatController {
   @GetMapping("/rooms")
   public ApiResponse<List<ChatRoomResponse>> getRooms(@CurrentUserId Long userId) {
     return ApiResponse.ok(chatService.getRooms(userId));
+  }
+
+  @PostMapping("/rooms")
+  @ResponseStatus(HttpStatus.CREATED)
+  public ApiResponse<ChatRoomResponse> getOrCreateRoom(
+      @CurrentUserId Long userId, @Valid @RequestBody CreateChatRoomRequest request) {
+    return ApiResponse.ok(chatService.getOrCreateRoom(userId, request.getFriendId()));
   }
 
   @GetMapping("/rooms/{roomId}/messages")

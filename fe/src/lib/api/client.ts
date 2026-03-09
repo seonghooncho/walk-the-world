@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
 let accessToken: string | null = localStorage.getItem("ww_access_token");
 let refreshToken: string | null = localStorage.getItem("ww_refresh_token");

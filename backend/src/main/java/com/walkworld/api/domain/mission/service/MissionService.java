@@ -167,6 +167,7 @@ public class MissionService {
         .missionId(missionId)
         .compositeImage(
             CompositeResponse.CompositeImage.builder()
+                .key(resolvedCompositeKey)
                 .url(s3Service.generateDownloadUrl(resolvedCompositeKey))
                 .thumbnailUrl(s3Service.generateDownloadUrl(resolvedCompositeKey))
                 .width(1024)

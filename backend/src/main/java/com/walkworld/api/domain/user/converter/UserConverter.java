@@ -9,12 +9,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class UserConverter {
 
-    public static UserProfileResponse toProfileResponse(User user, UserCurrency currency, int friendCount) {
+    public static UserProfileResponse toProfileResponse(
+            User user, UserCurrency currency, int friendCount, String avatarUrl) {
         return UserProfileResponse.builder()
                 .id(user.getId())
                 .email(user.getEmail())
                 .name(user.getName())
-                .avatarUrl(user.getAvatarUrl())
+                .avatarUrl(avatarUrl)
                 .totalSteps(user.getTotalSteps())
                 .currentCityId(user.getCurrentCityId())
                 .coupons(currency != null ? currency.getCoupons() : 0)

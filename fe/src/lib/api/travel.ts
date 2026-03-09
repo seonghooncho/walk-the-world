@@ -6,7 +6,7 @@ export interface MissionData {
   type: string;
   title: string;
   description: string;
-  image: string | null;
+  imageUrl: string | null;
   stepsRequired: number;
   reward: string | null;
   status: string;
@@ -27,6 +27,8 @@ export interface CityData {
   description: string;
   famousFood: string[];
   landmarks: string[];
+  isUnlocked?: boolean;
+  onlineUsers?: number;
 }
 
 export interface CityMember {
@@ -67,7 +69,7 @@ export const missionsApi = {
       { method: "POST", body: JSON.stringify(data) },
     ),
   composite: (missionId: string, imageKey: string) =>
-    apiFetch<{ missionId: string; compositeImage: { url: string; thumbnailUrl: string } }>(
+    apiFetch<{ missionId: string; compositeImage: { key: string; url: string; thumbnailUrl: string } }>(
       `/api/missions/v1/${missionId}/composite`,
       { method: "POST", body: JSON.stringify({ imageKey }) },
     ),

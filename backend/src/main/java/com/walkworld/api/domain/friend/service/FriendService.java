@@ -8,6 +8,7 @@ import com.walkworld.api.domain.friend.entity.Friendship;
 import com.walkworld.api.domain.friend.error.FriendErrorCode;
 import com.walkworld.api.domain.friend.error.FriendException;
 import com.walkworld.api.domain.friend.repository.FriendshipRepository;
+import com.walkworld.api.domain.s3.service.S3Service;
 import com.walkworld.api.domain.user.entity.User;
 import com.walkworld.api.domain.user.repository.UserRepository;
 import java.util.List;
@@ -23,6 +24,7 @@ public class FriendService {
   private final FriendshipRepository friendshipRepository;
   private final UserRepository userRepository;
   private final CurrencyService currencyService;
+  private final S3Service s3Service;
 
   @Transactional(readOnly = true)
   public List<FriendResponse> getFriends(Long userId) {
@@ -32,7 +34,8 @@ public class FriendService {
             f -> {
               User friend = userRepository.findById(f.getFriendId()).orElse(null);
               if (friend == null) return null;
-              return FriendConverter.toFriendResponse(friend, f);
+              return FriendConverter.toFriendResponse(
+                  friend, f, s3Service.resolvePublicUrl(friend.getAvatarUrl()));
             })
         .filter(f -> f != null)
         .toList();
@@ -68,7 +71,8 @@ public class FriendService {
     friendshipRepository.save(
         Friendship.builder().userId(request.getFriendId()).friendId(userId).method(method).build());
 
-    return FriendConverter.toFriendResponse(friend, method.name());
+    return FriendConverter.toFriendResponse(
+        friend, method.name(), s3Service.resolvePublicUrl(friend.getAvatarUrl()));
   }
 
   public void removeFriend(Long userId, Long friendId) {

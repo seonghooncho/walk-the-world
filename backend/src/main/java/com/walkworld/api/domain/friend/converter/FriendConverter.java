@@ -9,11 +9,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class FriendConverter {
 
-    public static FriendResponse toFriendResponse(User friend, Friendship friendship) {
+    public static FriendResponse toFriendResponse(
+            User friend, Friendship friendship, String avatarUrl) {
         return FriendResponse.builder()
                 .id(friend.getId())
                 .name(friend.getName())
-                .avatarUrl(friend.getAvatarUrl())
+                .avatarUrl(avatarUrl)
                 .totalSteps(friend.getTotalSteps())
                 .currentCityId(friend.getCurrentCityId())
                 .method(friendship.getMethod().name())
@@ -21,11 +22,11 @@ public class FriendConverter {
                 .build();
     }
 
-    public static FriendResponse toFriendResponse(User friend, String method) {
+    public static FriendResponse toFriendResponse(User friend, String method, String avatarUrl) {
         return FriendResponse.builder()
                 .id(friend.getId())
                 .name(friend.getName())
-                .avatarUrl(friend.getAvatarUrl())
+                .avatarUrl(avatarUrl)
                 .totalSteps(friend.getTotalSteps())
                 .currentCityId(friend.getCurrentCityId())
                 .method(method)

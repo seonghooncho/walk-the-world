@@ -5,6 +5,7 @@ import com.walkworld.api.domain.city.dto.CityResponse;
 import com.walkworld.api.domain.city.entity.City;
 import com.walkworld.api.domain.city.repository.CityRepository;
 import com.walkworld.api.domain.friend.repository.FriendshipRepository;
+import com.walkworld.api.domain.s3.service.S3Service;
 import com.walkworld.api.domain.user.error.UserErrorCode;
 import com.walkworld.api.domain.user.error.UserException;
 import com.walkworld.api.domain.user.repository.UserRepository;
@@ -21,6 +22,7 @@ public class CityService {
   private final CityRepository cityRepository;
   private final UserRepository userRepository;
   private final FriendshipRepository friendshipRepository;
+  private final S3Service s3Service;
 
   public List<CityResponse> getAllCities() {
     return cityRepository.findAllByOrderBySortOrderAsc().stream()
@@ -47,7 +49,7 @@ public class CityService {
                 CityMemberResponse.builder()
                     .id(user.getId())
                     .name(user.getName())
-                    .avatarUrl(user.getAvatarUrl())
+                    .avatarUrl(s3Service.resolvePublicUrl(user.getAvatarUrl()))
                     .totalSteps(user.getTotalSteps())
                     .isFriend(friendIds.contains(user.getId()))
                     .build())

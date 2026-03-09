@@ -35,7 +35,8 @@ public class UserService {
     var currency = currencyRepository.findById(userId).orElse(null);
     int friendCount = friendshipRepository.findFriendIdsByUserId(userId).size();
 
-    return UserConverter.toProfileResponse(user, currency, friendCount);
+    return UserConverter.toProfileResponse(
+        user, currency, friendCount, s3Service.resolvePublicUrl(user.getAvatarUrl()));
   }
 
   @Transactional
@@ -63,7 +64,7 @@ public class UserService {
     return PublicProfileResponse.builder()
         .id(target.getId())
         .name(target.getName())
-        .avatarUrl(target.getAvatarUrl())
+        .avatarUrl(s3Service.resolvePublicUrl(target.getAvatarUrl()))
         .totalSteps(target.getTotalSteps())
         .currentCityId(target.getCurrentCityId())
         .isFriend(isFriend)
@@ -78,7 +79,7 @@ public class UserService {
             .findById(userId)
             .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
 
-    String avatarUrl = s3Service.generateDownloadUrl(imageKey);
+    String avatarUrl = s3Service.resolvePublicUrl(imageKey);
     user.setAvatarUrl(imageKey);
     userRepository.save(user);
 

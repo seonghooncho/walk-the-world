@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { Camera, Utensils, PenLine, Compass, Users, Lock, Check, ChevronRight, Sparkles } from "lucide-react";
-import type { Mission, MissionType } from "@/mocks/missionData";
+import type { UiMission, UiMissionType } from "@/lib/city-utils";
 
-const typeConfig: Record<MissionType, { icon: typeof Camera; color: string }> = {
+const typeConfig: Record<UiMissionType, { icon: typeof Camera; color: string }> = {
   photo: { icon: Camera, color: "bg-ocean text-ocean-foreground" },
   food: { icon: Utensils, color: "bg-earth text-earth-foreground" },
   writing: { icon: PenLine, color: "bg-primary text-primary-foreground" },
@@ -11,9 +11,9 @@ const typeConfig: Record<MissionType, { icon: typeof Camera; color: string }> = 
 };
 
 interface MissionCardProps {
-  mission: Mission;
+  mission: UiMission;
   index?: number;
-  onClick?: (mission: Mission) => void;
+  onClick?: (mission: UiMission) => void;
 }
 
 const MissionCard = ({ mission, index = 0, onClick }: MissionCardProps) => {

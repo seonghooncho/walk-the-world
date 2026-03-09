@@ -1,51 +1,66 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { UserPlus, Check, LogIn, ArrowLeft } from "lucide-react";
+import { ArrowLeft, Check, UserPlus } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import UserAvatar from "@/components/shared/UserAvatar";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
-import { useAppStore } from "@/stores/appStore";
-import { cityUsers } from "@/mocks/mockData";
+import { useAddFriend, usePublicProfile } from "@/hooks/useApi";
+import { useAuth } from "@/contexts/AuthContext";
+import { toUiProfile } from "@/lib/city-utils";
 import { toast } from "sonner";
 
 const AddFriendPage = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
-  const user = useAppStore((s) => s.user);
-  const addFriendFree = useAppStore((s) => s.addFriendFree);
-  const [adding, setAdding] = useState(false);
   const [done, setDone] = useState(false);
+  const { user, isLoggedIn, requireLogin } = useAuth();
+  const addFriend = useAddFriend();
+  const targetUserId = Number(userId);
+  const { data: profileData, isLoading } = usePublicProfile(targetUserId);
+  const targetUser = profileData ? toUiProfile(profileData, { currentCityId: profileData.currentCityId }) : null;
+  const isSelf = targetUser?.id === user?.id;
+  const isAlreadyFriend = targetUser?.isFriend ?? false;
 
-  // Simulate "logged in" state — in real app, check auth token
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const handleAddFriend = async () => {
+    if (!targetUser) {
+      return;
+    }
 
-  // Find target user from mock data (will be replaced by API call)
-  const allUsers = [user, ...cityUsers];
-  const targetUser = allUsers.find((u) => u.id === userId);
-
-  const isSelf = userId === user.id;
-  const isAlreadyFriend = user.friends.includes(userId || "");
-
-  const handleAddFriend = () => {
-    if (!userId) return;
-    setAdding(true);
-    setTimeout(() => {
-      const result = addFriendFree(userId);
-      setAdding(false);
-      if (result.success) {
-        setDone(true);
-        toast.success(result.message);
-      } else {
-        toast.error(result.message);
-      }
-    }, 800);
+    try {
+      await addFriend.mutateAsync({ friendId: targetUser.id, method: "qr" });
+      setDone(true);
+      toast.success("친구가 되었습니다");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "친구 추가에 실패했습니다");
+    }
   };
 
-  const handleMockLogin = () => {
-    setIsLoggedIn(true);
-    toast.success("로그인 되었습니다! (데모)");
-  };
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <LoadingSpinner />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <AppLayout>
+        <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-6 text-center">
+          <p className="text-sm text-muted-foreground">친구를 추가하려면 먼저 로그인해주세요</p>
+          <button
+            onClick={requireLogin}
+            className="rounded-2xl bg-gradient-night px-6 py-3 text-sm font-bold text-white shadow-card"
+          >
+            로그인하기
+          </button>
+        </div>
+      </AppLayout>
+    );
+  }
 
   if (!targetUser) {
     return (
@@ -68,67 +83,36 @@ const AddFriendPage = () => {
   return (
     <AppLayout>
       <div className="px-4 pt-12">
-        {/* Back button */}
-        <button
-          onClick={() => navigate(-1)}
-          className="mb-6 flex items-center gap-1.5 text-sm text-muted-foreground"
-        >
+        <button onClick={() => navigate(-1)} className="mb-6 flex items-center gap-1.5 text-sm text-muted-foreground">
           <ArrowLeft className="h-4 w-4" />
           뒤로가기
         </button>
 
-        {/* Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mx-auto max-w-sm rounded-3xl bg-card p-8 shadow-elevated"
         >
-          {/* Target user info */}
           <div className="flex flex-col items-center text-center">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", damping: 15 }}
-            >
-              <UserAvatar name={targetUser.name} size="lg" />
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", damping: 15 }}>
+              <UserAvatar name={targetUser.name} avatar={targetUser.avatarUrl ?? undefined} size="lg" />
             </motion.div>
             <h2 className="mt-3 text-xl font-bold text-card-foreground">{targetUser.name}</h2>
-            <p className="text-sm text-muted-foreground">
-              {(targetUser.totalSteps / 1000).toFixed(0)}K 보 걸음
-            </p>
+            <p className="text-sm text-muted-foreground">{(targetUser.totalSteps / 1000).toFixed(0)}K 보 걸음</p>
           </div>
 
-          {/* Free badge */}
           <div className="mt-5 flex justify-center">
             <div className="rounded-full bg-success/10 px-4 py-1.5 text-xs font-bold text-success">
-              🎉 QR 친구 추가 — 무료!
+              🎉 QR 친구 추가 - 무료!
             </div>
           </div>
 
-          {/* Action area */}
           <div className="mt-6">
-            {!isLoggedIn ? (
-              /* Not logged in */
-              <div className="space-y-3">
-                <p className="text-center text-sm text-muted-foreground">
-                  친구를 추가하려면 먼저 로그인해주세요
-                </p>
-                <motion.button
-                  whileTap={{ scale: 0.97 }}
-                  onClick={handleMockLogin}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-night py-4 text-sm font-bold text-white shadow-card"
-                >
-                  <LogIn className="h-5 w-5" />
-                  로그인하기
-                </motion.button>
-              </div>
-            ) : isSelf ? (
-              /* Self */
+            {isSelf ? (
               <div className="rounded-xl bg-muted/50 p-4 text-center">
                 <p className="text-sm text-muted-foreground">자기 자신은 추가할 수 없어요 😅</p>
               </div>
             ) : isAlreadyFriend || done ? (
-              /* Already friends or just added */
               <div className="space-y-3 text-center">
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
                   <Check className="h-8 w-8 text-success" />
@@ -142,14 +126,13 @@ const AddFriendPage = () => {
                 </button>
               </div>
             ) : (
-              /* Can add friend */
               <motion.button
                 whileTap={{ scale: 0.97 }}
-                onClick={handleAddFriend}
-                disabled={adding}
+                onClick={() => void handleAddFriend()}
+                disabled={addFriend.isPending}
                 className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-hero py-4 text-sm font-bold text-primary-foreground shadow-glow disabled:opacity-40"
               >
-                {adding ? (
+                {addFriend.isPending ? (
                   <LoadingSpinner />
                 ) : (
                   <>

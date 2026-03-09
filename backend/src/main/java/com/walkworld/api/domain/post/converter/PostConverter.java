@@ -11,8 +11,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class PostConverter {
 
-    public static PostResponse toPostResponse(Post post, User author, long likeCount, long commentCount,
-                                               boolean isLiked, String imageUrl) {
+    public static PostResponse toPostResponse(
+            Post post,
+            User author,
+            long likeCount,
+            long commentCount,
+            boolean isLiked,
+            String imageUrl,
+            String authorAvatarUrl) {
         PostResponse.ImageDetail imageDetail = null;
         if (post.getImageKey() != null && imageUrl != null) {
             imageDetail = PostResponse.ImageDetail.builder()
@@ -25,7 +31,7 @@ public class PostConverter {
                 .id(post.getId())
                 .userId(post.getUserId())
                 .userName(author != null ? author.getName() : "Unknown")
-                .userAvatarUrl(author != null ? author.getAvatarUrl() : null)
+                .userAvatarUrl(authorAvatarUrl)
                 .cityId(post.getCityId())
                 .content(post.getContent())
                 .image(imageDetail)
@@ -36,13 +42,14 @@ public class PostConverter {
                 .build();
     }
 
-    public static CommentResponse toCommentResponse(Comment comment, User author) {
+    public static CommentResponse toCommentResponse(
+            Comment comment, User author, String authorAvatarUrl) {
         return CommentResponse.builder()
                 .id(comment.getId())
                 .postId(comment.getPostId())
                 .userId(comment.getUserId())
                 .userName(author != null ? author.getName() : "Unknown")
-                .userAvatarUrl(author != null ? author.getAvatarUrl() : null)
+                .userAvatarUrl(authorAvatarUrl)
                 .content(comment.getContent())
                 .createdAt(comment.getCreatedAt())
                 .build();

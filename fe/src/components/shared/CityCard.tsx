@@ -1,25 +1,30 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Lock, ChevronDown, Target } from "lucide-react";
-import type { City } from "@/mocks/mockData";
-import type { Mission } from "@/mocks/missionData";
-import { formatSteps } from "@/mocks/mockData";
-import { useAppStore } from "@/stores/appStore";
+import type { UiCity, UiMission } from "@/lib/city-utils";
+import { formatSteps } from "@/lib/city-utils";
 import MissionCard from "./MissionCard";
 
 interface CityCardProps {
-  city: City;
+  city: UiCity;
+  missions: UiMission[];
   isUnlocked: boolean;
   isCurrent: boolean;
   index: number;
   defaultExpanded?: boolean;
-  onMissionClick?: (mission: Mission) => void;
+  onMissionClick?: (mission: UiMission) => void;
 }
 
-const CityCard = ({ city, isUnlocked, isCurrent, index, defaultExpanded = false, onMissionClick }: CityCardProps) => {
+const CityCard = ({
+  city,
+  missions,
+  isUnlocked,
+  isCurrent,
+  index,
+  defaultExpanded = false,
+  onMissionClick,
+}: CityCardProps) => {
   const [expanded, setExpanded] = useState(defaultExpanded);
-  const storeMissions = useAppStore((s) => s.missions[city.id] || []);
-  const missions = storeMissions;
   const hasMissions = missions.length > 0;
 
   const completed = missions.filter((m) => m.status === "completed").length;

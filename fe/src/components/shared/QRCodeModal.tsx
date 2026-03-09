@@ -3,7 +3,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { X, Copy, Check } from "lucide-react";
 import { useState } from "react";
 import UserAvatar from "./UserAvatar";
-import { useAppStore } from "@/stores/appStore";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 interface QRCodeModalProps {
@@ -13,7 +13,11 @@ interface QRCodeModalProps {
 
 const QRCodeModal = ({ open, onClose }: QRCodeModalProps) => {
   const [copied, setCopied] = useState(false);
-  const user = useAppStore((s) => s.user);
+  const { user } = useAuth();
+
+  if (!user) {
+    return null;
+  }
 
   const qrUrl = `${window.location.origin}/add-friend/${user.id}`;
 
@@ -58,7 +62,7 @@ const QRCodeModal = ({ open, onClose }: QRCodeModalProps) => {
 
               {/* User info */}
               <div className="flex flex-col items-center">
-                <UserAvatar name={user.name} size="lg" />
+                <UserAvatar name={user.name} avatar={user.avatarUrl ?? undefined} size="lg" />
                 <h3 className="mt-2 text-lg font-bold text-card-foreground">{user.name}</h3>
                 <p className="text-xs text-muted-foreground">QR코드를 스캔하여 친구를 추가하세요</p>
               </div>

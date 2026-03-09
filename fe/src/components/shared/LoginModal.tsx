@@ -133,6 +133,8 @@ const LoginModal = () => {
                   placeholder="비밀번호"
                   required
                   minLength={6}
+                  pattern="^(?=.*[A-Za-z])(?=.*\\d).{6,100}$"
+                  title="비밀번호는 영문과 숫자를 포함해 6자 이상이어야 합니다"
                   className="w-full rounded-xl border border-input bg-background py-2.5 pl-10 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
                 <button
