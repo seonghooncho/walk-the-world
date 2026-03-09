@@ -55,9 +55,12 @@ const LoginPage = () => {
       >
         {/* Logo */}
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-foreground">🌍 WalkWorld</h1>
+          <div className="flex items-center justify-center gap-3">
+            <img src="/brand-icon.svg" alt="걸어서 세계속으로 아이콘" className="h-12 w-12" />
+            <h1 className="text-2xl font-bold leading-tight text-foreground sm:text-3xl">걸어서 세계속으로</h1>
+          </div>
           <p className="mt-2 text-sm text-muted-foreground">
-            걸어서 세계를 여행하세요
+            걸음으로 시간을 잇는 여행을 시작하세요
           </p>
         </div>
 

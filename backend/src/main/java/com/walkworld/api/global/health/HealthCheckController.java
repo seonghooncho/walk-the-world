@@ -15,7 +15,7 @@ public class HealthCheckController {
         return ApiResponse.ok(Map.of(
                 "status", "UP",
                 "timestamp", Instant.now().toString(),
-                "service", "walkworld-api"
+                "service", "timelink-api"
         ));
     }
 }

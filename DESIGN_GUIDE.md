@@ -1,4 +1,4 @@
-# 🗺️ WalkWorld — 컴포넌트 & 디자인 가이드
+# 걸어서 세계속으로 컴포넌트 & 디자인 가이드
 
 > 걷기 기반 가상 여행 소셜 앱의 UI/UX 시스템 문서
 
@@ -239,7 +239,7 @@ fe/src/
 ### 백엔드 (Spring Boot)
 ```
 backend/src/main/java/com/walkworld/api/
-├── WalkWorldApplication.java     # 엔트리포인트 (@EnableJpaAuditing)
+├── TimelinkApplication.java      # 엔트리포인트 (@EnableJpaAuditing)
 ├── LambdaHandler.java            # AWS Lambda 어댑터
 ├── global/                       # 횡단 관심사 (Cross-cutting)
 │   ├── config/                   # SecurityConfig, S3Config, CorsConfig, JwtProperties, WebConfig

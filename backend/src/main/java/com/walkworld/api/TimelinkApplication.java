@@ -6,8 +6,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 @SpringBootApplication
 @EnableJpaAuditing
-public class WalkWorldApplication {
+public class TimelinkApplication {
     public static void main(String[] args) {
-        SpringApplication.run(WalkWorldApplication.class, args);
+        SpringApplication.run(TimelinkApplication.class, args);
     }
 }
