@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.walkworld.api.domain.auth.dto.res.TokenResDTO;
 import com.walkworld.api.domain.auth.service.AuthService;
+import com.walkworld.api.domain.auth.service.KakaoOAuthService;
 import com.walkworld.api.global.error.GlobalExceptionHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,13 +24,14 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 class AuthControllerTest {
 
   @Mock private AuthService authService;
+  @Mock private KakaoOAuthService kakaoOAuthService;
 
   private MockMvc mockMvc;
 
   @BeforeEach
   void setUp() {
     mockMvc =
-        MockMvcBuilders.standaloneSetup(new AuthController(authService))
+        MockMvcBuilders.standaloneSetup(new AuthController(authService, kakaoOAuthService))
             .setControllerAdvice(new GlobalExceptionHandler())
             .build();
   }

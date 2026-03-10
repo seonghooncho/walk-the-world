@@ -60,6 +60,20 @@ variable "google_client_id" {
   default     = ""
 }
 
+variable "kakao_client_id" {
+  description = "Optional Kakao OAuth client id"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "kakao_client_secret" {
+  description = "Optional Kakao OAuth client secret"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "lambda_memory" {
   description = "Lambda memory in MB"
   type        = number

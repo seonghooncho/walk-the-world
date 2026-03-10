@@ -42,13 +42,15 @@ output "cloudfront_distribution_id" {
 output "ssm_parameter_names" {
   description = "SSM parameter names used by frontend and backend"
   value = {
-    backend_db_url          = aws_ssm_parameter.backend_db_url.name
-    backend_db_username     = aws_ssm_parameter.backend_db_username.name
-    backend_db_password     = aws_ssm_parameter.backend_db_password.name
-    backend_jwt_secret      = aws_ssm_parameter.backend_jwt_secret.name
-    backend_s3_bucket       = aws_ssm_parameter.backend_s3_bucket.name
-    backend_ai_api_base_url = aws_ssm_parameter.backend_ai_api_base_url.name
-    frontend_api_base_url   = aws_ssm_parameter.frontend_api_base_url.name
-    frontend_google_client  = local.has_google_client_id ? aws_ssm_parameter.frontend_google_client_id[0].name : null
+    backend_db_url              = aws_ssm_parameter.backend_db_url.name
+    backend_db_username         = aws_ssm_parameter.backend_db_username.name
+    backend_db_password         = aws_ssm_parameter.backend_db_password.name
+    backend_jwt_secret          = aws_ssm_parameter.backend_jwt_secret.name
+    backend_s3_bucket           = aws_ssm_parameter.backend_s3_bucket.name
+    backend_ai_api_base_url     = aws_ssm_parameter.backend_ai_api_base_url.name
+    backend_kakao_client_id     = aws_ssm_parameter.backend_kakao_client_id.name
+    backend_kakao_client_secret = aws_ssm_parameter.backend_kakao_client_secret.name
+    frontend_api_base_url       = aws_ssm_parameter.frontend_api_base_url.name
+    frontend_google_client      = local.has_google_client_id ? aws_ssm_parameter.frontend_google_client_id[0].name : null
   }
 }
