@@ -243,12 +243,17 @@ public class PostService {
     boolean isLiked = likeRepository.existsByPostIdAndUserId(post.getId(), currentUserId);
     String imageUrl =
         post.getImageKey() != null ? s3Service.generateDownloadUrl(post.getImageKey()) : null;
+    String authorAvatarUrl =
+        author != null ? s3Service.resolvePublicUrl(author.getAvatarUrl()) : null;
 
-    return PostConverter.toPostResponse(post, author, likeCount, commentCount, isLiked, imageUrl);
+    return PostConverter.toPostResponse(
+        post, author, likeCount, commentCount, isLiked, imageUrl, authorAvatarUrl);
   }
 
   private CommentResponse buildCommentResponse(Comment comment) {
     User author = userRepository.findById(comment.getUserId()).orElse(null);
-    return PostConverter.toCommentResponse(comment, author);
+    String authorAvatarUrl =
+        author != null ? s3Service.resolvePublicUrl(author.getAvatarUrl()) : null;
+    return PostConverter.toCommentResponse(comment, author, authorAvatarUrl);
   }
 }

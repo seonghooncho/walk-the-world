@@ -40,8 +40,7 @@ public class StepService {
     Long previousSteps = user.getTotalSteps();
     user.setTotalSteps(request.getSteps());
 
-    stepSyncLogRepository.save(
-        StepSyncLog.builder().userId(userId).steps(request.getSteps()).build());
+    stepSyncLogRepository.save(StepSyncLog.builder().userId(userId).steps(request.getSteps()).build());
 
     List<City> cities = cityRepository.findAllByOrderBySortOrderAsc();
     List<String> newlyUnlocked = new ArrayList<>();
@@ -82,8 +81,7 @@ public class StepService {
 
     LocalDateTime fromDateTime = from.atStartOfDay();
     LocalDateTime toDateTime = to.atTime(LocalTime.MAX);
-    List<StepSyncLog> logs =
-        stepSyncLogRepository.findByUserIdAndDateRange(userId, fromDateTime, toDateTime);
+    List<StepSyncLog> logs = stepSyncLogRepository.findByUserIdAndDateRange(userId, fromDateTime, toDateTime);
 
     Map<LocalDate, Long> dailyMax = new LinkedHashMap<>();
     for (StepSyncLog log : logs) {

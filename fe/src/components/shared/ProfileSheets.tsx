@@ -3,11 +3,20 @@ import { motion } from "framer-motion";
 import { Bell, BellOff, HelpCircle, LogOut, ChevronRight, FileText } from "lucide-react";
 import BottomSheet from "./BottomSheet";
 import PostCard from "./PostCard";
-import { useAppStore } from "@/stores/appStore";
+import { useMyPosts } from "@/hooks/useApi";
+import { toUiPost } from "@/lib/city-utils";
 import { toast } from "sonner";
 
 // Settings sheet component (reusable)
-export const SettingsSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
+export const SettingsSheet = ({
+  open,
+  onClose,
+  onLogout,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onLogout?: () => void;
+}) => {
   const [notifications, setNotifications] = useState(true);
 
   return (
@@ -34,7 +43,10 @@ export const SettingsSheet = ({ open, onClose }: { open: boolean; onClose: () =>
           <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
         </button>
         <button
-          onClick={() => { toast.info("로그아웃 되었습니다 (데모)"); onClose(); }}
+          onClick={() => {
+            onLogout?.();
+            onClose();
+          }}
           className="flex w-full items-center gap-3 rounded-xl bg-destructive/10 p-4"
         >
           <LogOut className="h-5 w-5 text-destructive" />
@@ -47,14 +59,17 @@ export const SettingsSheet = ({ open, onClose }: { open: boolean; onClose: () =>
 
 // My posts sheet
 export const MyPostsSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
-  const posts = useAppStore((s) => s.posts);
-  const user = useAppStore((s) => s.user);
-  const myPosts = posts.filter((p) => p.userId === user.id);
+  const { data, isLoading } = useMyPosts();
+  const myPosts = (data?.pages ?? []).flatMap((page) => page.data).map(toUiPost);
 
   return (
     <BottomSheet open={open} onClose={onClose} title={`내 게시물 (${myPosts.length})`}>
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {myPosts.length === 0 ? (
+        {isLoading ? (
+          <div className="py-12 text-center">
+            <p className="text-sm text-muted-foreground">게시물을 불러오는 중입니다</p>
+          </div>
+        ) : myPosts.length === 0 ? (
           <div className="py-12 text-center">
             <FileText className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">아직 작성한 게시물이 없어요</p>

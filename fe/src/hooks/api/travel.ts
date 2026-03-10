@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { badgesApi, citiesApi, missionsApi } from "@/lib/api";
+import { badgesApi, citiesApi, isAuthenticated, missionsApi } from "@/lib/api";
 
 export function useMissions(params?: { cityId?: string; status?: string }) {
   return useQuery({
     queryKey: ["missions", params],
     queryFn: async () => (await missionsApi.list(params)).data,
     staleTime: 30_000,
+    enabled: isAuthenticated(),
   });
 }
 
@@ -36,7 +37,7 @@ export function useCityMembers(cityId: string) {
     queryKey: ["cityMembers", cityId],
     queryFn: async () => (await citiesApi.members(cityId)).data,
     staleTime: 30_000,
-    enabled: !!cityId,
+    enabled: isAuthenticated() && !!cityId,
   });
 }
 
@@ -45,6 +46,7 @@ export function useBadges(params?: { cityId?: string; earned?: boolean }) {
     queryKey: ["badges", params],
     queryFn: async () => (await badgesApi.list(params)).data,
     staleTime: 30_000,
+    enabled: isAuthenticated(),
   });
 }
 
@@ -53,5 +55,6 @@ export function useBadgeStats() {
     queryKey: ["badgeStats"],
     queryFn: async () => (await badgesApi.stats()).data,
     staleTime: 30_000,
+    enabled: isAuthenticated(),
   });
 }

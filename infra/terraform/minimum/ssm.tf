@@ -47,3 +47,15 @@ resource "aws_ssm_parameter" "frontend_google_client_id" {
   type  = "SecureString"
   value = var.google_client_id
 }
+
+resource "aws_ssm_parameter" "backend_kakao_client_id" {
+  name  = "${local.ssm_prefix}/backend/KAKAO_CLIENT_ID"
+  type  = "SecureString"
+  value = var.kakao_client_id
+}
+
+resource "aws_ssm_parameter" "backend_kakao_client_secret" {
+  name  = "${local.ssm_prefix}/backend/KAKAO_CLIENT_SECRET"
+  type  = "SecureString"
+  value = var.kakao_client_secret
+}

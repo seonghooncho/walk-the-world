@@ -16,7 +16,15 @@ fi
 FRONTEND_BUCKET="$(terraform -chdir="${TF_DIR}" output -raw frontend_bucket_name)"
 CLOUDFRONT_DISTRIBUTION_ID="$(terraform -chdir="${TF_DIR}" output -raw cloudfront_distribution_id)"
 
-aws s3 sync "${ROOT_DIR}/fe/dist/" "s3://${FRONTEND_BUCKET}" --delete --region "${AWS_REGION}"
+aws s3 sync "${ROOT_DIR}/fe/dist/" "s3://${FRONTEND_BUCKET}" \
+  --delete \
+  --exclude "index.html" \
+  --region "${AWS_REGION}"
+
+aws s3 cp "${ROOT_DIR}/fe/dist/index.html" "s3://${FRONTEND_BUCKET}/index.html" \
+  --cache-control "no-cache, no-store, must-revalidate" \
+  --content-type "text/html" \
+  --region "${AWS_REGION}"
 
 INVALIDATION_ID="$(
   aws cloudfront create-invalidation \

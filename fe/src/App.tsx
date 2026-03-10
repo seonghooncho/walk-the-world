@@ -15,6 +15,7 @@ import AddFriendPage from "./pages/AddFriendPage";
 import PostDetailPage from "./pages/PostDetailPage";
 import BadgeCollectionPage from "./pages/BadgeCollectionPage";
 import LoginPage from "./pages/LoginPage";
+import OAuthCallbackPage from "./pages/OAuthCallbackPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -36,6 +37,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/auth/callback" element={<OAuthCallbackPage />} />
             <Route path="/" element={<HomePage />} />
             <Route path="/map" element={<MapPage />} />
             <Route path="/city" element={<CityPage />} />

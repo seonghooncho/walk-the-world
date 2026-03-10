@@ -68,6 +68,8 @@ resource "aws_lambda_function" "backend" {
       JWT_SECRET             = aws_ssm_parameter.backend_jwt_secret.value
       S3_BUCKET              = aws_ssm_parameter.backend_s3_bucket.value
       AI_API_BASE_URL        = aws_ssm_parameter.backend_ai_api_base_url.value
+      KAKAO_CLIENT_ID        = aws_ssm_parameter.backend_kakao_client_id.value
+      KAKAO_CLIENT_SECRET    = aws_ssm_parameter.backend_kakao_client_secret.value
     }
   }
 

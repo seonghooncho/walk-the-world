@@ -65,6 +65,11 @@ export const friendsApi = {
 
 export const chatApi = {
   getRooms: () => apiFetch<ChatRoomData[]>("/api/chat/v1/rooms"),
+  getOrCreateRoom: (friendId: number) =>
+    apiFetch<ChatRoomData>("/api/chat/v1/rooms", {
+      method: "POST",
+      body: JSON.stringify({ friendId }),
+    }),
   getMessages: (roomId: number, cursor?: string, limit = 50) => {
     const qs = new URLSearchParams({ limit: String(limit) });
     if (cursor) {

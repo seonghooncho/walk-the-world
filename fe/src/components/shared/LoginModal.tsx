@@ -5,6 +5,7 @@ import { useLogin, useSignup } from "@/hooks/useApi";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import GoogleLoginButton from "@/components/shared/GoogleLoginButton";
+import KakaoLoginButton from "@/components/shared/KakaoLoginButton";
 
 type Mode = "login" | "signup";
 
@@ -40,10 +41,6 @@ const LoginModal = () => {
     } catch (error: unknown) {
       toast.error(getErrorMessage(error));
     }
-  };
-
-  const handleKakaoLogin = () => {
-    toast.info("카카오 로그인은 카카오 개발자 앱 설정 후 사용 가능합니다");
   };
 
   return (
@@ -133,6 +130,8 @@ const LoginModal = () => {
                   placeholder="비밀번호"
                   required
                   minLength={6}
+                  pattern="^(?=.*[A-Za-z])(?=.*\\d).{6,100}$"
+                  title="비밀번호는 영문과 숫자를 포함해 6자 이상이어야 합니다"
                   className="w-full rounded-xl border border-input bg-background py-2.5 pl-10 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
                 <button
@@ -172,20 +171,7 @@ const LoginModal = () => {
             {/* Social logins */}
             <div className="space-y-2.5">
               <GoogleLoginButton onSuccess={onLoginSuccess} />
-
-              <button
-                onClick={handleKakaoLogin}
-                className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold transition-opacity"
-                style={{ backgroundColor: "#FEE500", color: "#191919" }}
-              >
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <path
-                    d="M9 1C4.58 1 1 3.79 1 7.21c0 2.15 1.43 4.04 3.58 5.12l-.91 3.37c-.08.29.25.52.5.35l3.94-2.63c.29.03.58.05.89.05 4.42 0 8-2.79 8-6.26S13.42 1 9 1z"
-                    fill="#191919"
-                  />
-                </svg>
-                카카오로 시작하기
-              </button>
+              <KakaoLoginButton />
             </div>
           </motion.div>
         </motion.div>

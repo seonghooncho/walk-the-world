@@ -60,6 +60,8 @@ module "platform" {
   neon_pg_version       = var.neon_pg_version
   jwt_secret            = var.jwt_secret
   google_client_id      = var.google_client_id
+  kakao_client_id       = var.kakao_client_id
+  kakao_client_secret   = var.kakao_client_secret
   lambda_memory         = var.lambda_memory
   lambda_timeout        = var.lambda_timeout
   ai_lambda_memory      = var.ai_lambda_memory

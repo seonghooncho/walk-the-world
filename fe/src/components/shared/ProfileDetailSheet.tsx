@@ -1,32 +1,38 @@
 import { motion } from "framer-motion";
 import { X, MapPin, Footprints, Calendar, UserPlus, MessageCircle } from "lucide-react";
 import UserAvatar from "./UserAvatar";
-import type { UserProfile } from "@/mocks/mockData";
-import { getCurrentCity, formatSteps } from "@/mocks/mockData";
-import { useAppStore } from "@/stores/appStore";
+import { formatSteps } from "@/lib/city-utils";
+import type { UiProfile } from "@/lib/city-utils";
+import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 interface ProfileDetailSheetProps {
-  user: UserProfile;
+  user: UiProfile;
+  cityLabel?: string;
+  messageRoomId?: number | null;
+  onMessage?: () => void;
   onClose: () => void;
   onAddFriend?: () => void;
 }
 
-const ProfileDetailSheet = ({ user: target, onClose, onAddFriend }: ProfileDetailSheetProps) => {
-  const currentUserState = useAppStore((s) => s.user);
-  const getChatRoomByFriendId = useAppStore((s) => s.getChatRoomByFriendId);
+const ProfileDetailSheet = ({ user: target, cityLabel, messageRoomId, onMessage, onClose, onAddFriend }: ProfileDetailSheetProps) => {
+  const { user: currentUser } = useAuth();
   const navigate = useNavigate();
-  const isSelf = target.id === currentUserState.id;
-  const isFriend = currentUserState.friends.includes(target.id);
-  const city = getCurrentCity(target.totalSteps);
+  const isSelf = target.id === currentUser?.id;
+  const isFriend = target.isFriend;
 
-  const joinDate = new Date(target.joinedAt);
-  const joinLabel = `${joinDate.getFullYear()}.${String(joinDate.getMonth() + 1).padStart(2, "0")}`;
+  const joinDate = target.joinedAt ? new Date(target.joinedAt) : null;
+  const joinLabel = joinDate
+    ? `${joinDate.getFullYear()}.${String(joinDate.getMonth() + 1).padStart(2, "0")}`
+    : "정보 없음";
 
   const handleMessage = () => {
-    const room = getChatRoomByFriendId(target.id);
     onClose();
-    navigate(room ? `/chat/${room.id}` : "/feed");
+    if (onMessage) {
+      onMessage();
+      return;
+    }
+    navigate(messageRoomId ? `/chat/${messageRoomId}` : "/feed");
   };
 
   return (
@@ -57,7 +63,7 @@ const ProfileDetailSheet = ({ user: target, onClose, onAddFriend }: ProfileDetai
 
         {/* Profile header */}
         <div className="flex flex-col items-center px-6 pt-2">
-          <UserAvatar name={target.name} avatar={target.avatar} size="lg" showOnline />
+          <UserAvatar name={target.name} avatar={target.avatarUrl ?? undefined} size="lg" showOnline />
           <h2 className="mt-3 text-lg font-bold text-card-foreground">{target.name}</h2>
           {isSelf && (
             <span className="mt-1 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-medium text-primary-foreground">나</span>
@@ -73,7 +79,7 @@ const ProfileDetailSheet = ({ user: target, onClose, onAddFriend }: ProfileDetai
           </div>
           <div className="flex flex-col items-center rounded-xl bg-muted/60 py-3">
             <MapPin className="h-4 w-4 text-accent mb-1" />
-            <span className="text-sm font-bold text-card-foreground">{city.countryFlag} {city.name}</span>
+            <span className="text-sm font-bold text-card-foreground">{cityLabel ?? target.currentCityId}</span>
             <span className="text-[10px] text-muted-foreground">현재 도시</span>
           </div>
           <div className="flex flex-col items-center rounded-xl bg-muted/60 py-3">
