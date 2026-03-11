@@ -1,6 +1,6 @@
 import { cityFoodImages, cityLandmarkImages } from "@/mocks/spotImages";
 import { cityMissions, computeCityMissions, type Mission as StaticMission } from "@/mocks/missionData";
-import { cities as staticCities, type City as StaticCity } from "@/mocks/mockData";
+import { cities as staticCities, currentUser as guestPreviewUser, type City as StaticCity } from "@/mocks/mockData";
 import type {
   BadgeData,
   CityData,
@@ -165,6 +165,9 @@ export const toUiMissionMap = (missions: Record<string, MissionData[]>) =>
 
 export const getStaticCities = () => staticCities.map((city) => toUiCity(city));
 
+export const GUEST_PREVIEW_TOTAL_STEPS = guestPreviewUser.totalSteps;
+export const GUEST_PREVIEW_CITY_ID = guestPreviewUser.currentCityId;
+
 export const buildStaticMissionMap = (
   totalSteps: number,
   completedMissionIds: Iterable<string> = [],
@@ -185,6 +188,22 @@ export const buildStaticMissionMap = (
       ).map((mission) => toUiMission(mission)),
     ]),
   ) as Record<string, UiMission[]>;
+};
+
+export const buildGuestPreviewStepInfo = (cities: UiCity[]): StepInfo => {
+  const currentCity = findCityById(cities, GUEST_PREVIEW_CITY_ID);
+  const nextCity = findNextCity(cities, GUEST_PREVIEW_TOTAL_STEPS);
+
+  return {
+    totalSteps: GUEST_PREVIEW_TOTAL_STEPS,
+    currentCityId: currentCity?.id ?? GUEST_PREVIEW_CITY_ID,
+    currentCityName: currentCity?.name ?? "도쿄",
+    nextCityId: nextCity?.id ?? null,
+    nextCityName: nextCity?.name ?? null,
+    stepsToNextCity: nextCity ? Math.max(nextCity.stepsRequired - GUEST_PREVIEW_TOTAL_STEPS, 0) : 0,
+    progressPercent: getProgressPercent(cities, GUEST_PREVIEW_TOTAL_STEPS, currentCity?.id ?? GUEST_PREVIEW_CITY_ID),
+    newlyUnlockedCities: cities.filter((city) => city.stepsRequired <= GUEST_PREVIEW_TOTAL_STEPS).map((city) => city.id),
+  };
 };
 
 export const toUiProfile = (
