@@ -10,16 +10,21 @@ import MissionDetailModal from "@/components/shared/MissionDetailModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBadges, useCityMembers, useCurrency, useStepInfo } from "@/hooks/useApi";
 import {
+  buildGuestPreviewStepInfo,
   buildStaticMissionMap,
   findCityById,
+  GUEST_PREVIEW_TOTAL_STEPS,
   getCityFoodItems,
   getCityLandmarkItems,
   getStaticCities,
   type UiMission,
 } from "@/lib/city-utils";
+import { cityUsers } from "@/mocks/mockData";
 import cityTokyoImg from "@/assets/city-tokyo.jpg";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { useNavigate } from "react-router-dom";
+
+const GUEST_PREVIEW_COUPONS = 2;
 
 const fade = (delay: number) => ({
   initial: { opacity: 0, y: 16 },
@@ -29,13 +34,15 @@ const fade = (delay: number) => ({
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const { user, isLoggedIn, requireLogin } = useAuth();
+  const { user, isLoggedIn } = useAuth();
   const [selectedMission, setSelectedMission] = useState<UiMission | null>(null);
   const { data: stepInfo, isLoading: isStepLoading } = useStepInfo();
   const { data: currency } = useCurrency();
   const { data: badgesResponse, isLoading: isBadgesLoading } = useBadges();
   const cities = useMemo(() => getStaticCities(), []);
-  const totalSteps = stepInfo?.totalSteps ?? user?.totalSteps ?? 0;
+  const guestStepInfo = useMemo(() => buildGuestPreviewStepInfo(cities), [cities]);
+  const activeStepInfo = isLoggedIn ? stepInfo : guestStepInfo;
+  const totalSteps = activeStepInfo?.totalSteps ?? user?.totalSteps ?? GUEST_PREVIEW_TOTAL_STEPS;
   const completedMissionIds = useMemo(
     () =>
       new Set(
@@ -49,26 +56,10 @@ const HomePage = () => {
     () => buildStaticMissionMap(totalSteps, completedMissionIds),
     [completedMissionIds, totalSteps],
   );
-  const currentCity = findCityById(cities, stepInfo?.currentCityId ?? user?.currentCityId ?? null);
+  const currentCity = findCityById(cities, activeStepInfo?.currentCityId ?? user?.currentCityId ?? null);
   const { data: cityMembers } = useCityMembers(currentCity?.id ?? "");
 
-  if (!isLoggedIn) {
-    return (
-      <AppLayout>
-        <div className="flex h-[60vh] flex-col items-center justify-center gap-3">
-          <p className="text-sm text-muted-foreground">로그인이 필요합니다</p>
-          <button
-            onClick={requireLogin}
-            className="rounded-xl bg-gradient-hero px-4 py-2 text-sm font-semibold text-primary-foreground"
-          >
-            로그인하기
-          </button>
-        </div>
-      </AppLayout>
-    );
-  }
-
-  if (!user || !stepInfo || !currentCity || isStepLoading || isBadgesLoading) {
+  if ((isLoggedIn && (!user || !stepInfo || isStepLoading || isBadgesLoading)) || !currentCity || !activeStepInfo) {
     return (
       <AppLayout>
         <div className="flex h-[60vh] items-center justify-center">
@@ -78,10 +69,14 @@ const HomePage = () => {
     );
   }
 
-  const progress = stepInfo.progressPercent;
+  const progress = activeStepInfo.progressPercent;
   const activeMissions = (missions[currentCity.id] || []).filter((mission) => mission.status === "available");
-  const memberCount = (cityMembers?.length ?? 0) + 1;
-  const nextCityName = stepInfo.nextCityName ?? "최종 도시";
+  const memberCount = isLoggedIn
+    ? (cityMembers?.length ?? 0) + 1
+    : cityUsers.filter((member) => member.currentCityId === currentCity.id).length + 1;
+  const nextCityName = activeStepInfo.nextCityName ?? "최종 도시";
+  const totalStepsLabel = (isLoggedIn ? user?.totalSteps : activeStepInfo.totalSteps)?.toLocaleString() ?? "0";
+  const couponCount = isLoggedIn ? currency?.coupons ?? user?.coupons ?? 0 : GUEST_PREVIEW_COUPONS;
 
   return (
     <AppLayout>
@@ -104,7 +99,7 @@ const HomePage = () => {
             <StepProgressRing progress={progress} size={100} strokeWidth={5}>
               <div className="text-center">
                 <Footprints className="mx-auto mb-0.5 h-4 w-4 text-primary" />
-                <p className="text-lg font-bold text-card-foreground">{user.totalSteps.toLocaleString()}</p>
+                <p className="text-lg font-bold text-card-foreground">{totalStepsLabel}</p>
               </div>
             </StepProgressRing>
 
@@ -116,7 +111,7 @@ const HomePage = () => {
               <div className="flex items-center gap-4">
                 <div>
                   <p className="text-[11px] text-muted-foreground">{nextCityName}까지</p>
-                  <p className="text-sm font-semibold text-primary">{stepInfo.stepsToNextCity.toLocaleString()} 보</p>
+                  <p className="text-sm font-semibold text-primary">{activeStepInfo.stepsToNextCity.toLocaleString()} 보</p>
                 </div>
                 <div className="h-6 w-px bg-border" />
                 <div>
@@ -166,7 +161,7 @@ const HomePage = () => {
         >
           <div className="flex items-center gap-2">
             <Ticket className="h-4 w-4 text-primary" />
-            <FriendCouponBadge count={currency?.coupons ?? user.coupons} />
+            <FriendCouponBadge count={couponCount} />
           </div>
           <span className="text-[11px] text-muted-foreground">이번 주 남은 쿠폰</span>
         </motion.button>

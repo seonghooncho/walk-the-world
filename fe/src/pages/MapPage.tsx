@@ -6,8 +6,10 @@ import MissionDetailModal from "@/components/shared/MissionDetailModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBadges, useStepInfo } from "@/hooks/useApi";
 import {
+  buildGuestPreviewStepInfo,
   buildStaticMissionMap,
   findCityById,
+  GUEST_PREVIEW_TOTAL_STEPS,
   getStaticCities,
   type UiMission,
 } from "@/lib/city-utils";
@@ -15,12 +17,14 @@ import heroMapImg from "@/assets/hero-map.jpg";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 
 const MapPage = () => {
-  const { user, isLoggedIn, requireLogin } = useAuth();
+  const { user, isLoggedIn } = useAuth();
   const [selectedMission, setSelectedMission] = useState<UiMission | null>(null);
   const { data: stepInfo, isLoading: isStepLoading } = useStepInfo();
   const { data: badgesResponse, isLoading: isBadgesLoading } = useBadges();
   const cities = useMemo(() => getStaticCities(), []);
-  const totalSteps = stepInfo?.totalSteps ?? user?.totalSteps ?? 0;
+  const guestStepInfo = useMemo(() => buildGuestPreviewStepInfo(cities), [cities]);
+  const activeStepInfo = isLoggedIn ? stepInfo : guestStepInfo;
+  const totalSteps = activeStepInfo?.totalSteps ?? user?.totalSteps ?? GUEST_PREVIEW_TOTAL_STEPS;
   const completedMissionIds = useMemo(
     () =>
       new Set(
@@ -34,25 +38,9 @@ const MapPage = () => {
     () => buildStaticMissionMap(totalSteps, completedMissionIds),
     [completedMissionIds, totalSteps],
   );
-  const currentCity = findCityById(cities, stepInfo?.currentCityId ?? user?.currentCityId ?? null);
+  const currentCity = findCityById(cities, activeStepInfo?.currentCityId ?? user?.currentCityId ?? null);
 
-  if (!isLoggedIn) {
-    return (
-      <AppLayout>
-        <div className="flex h-[60vh] flex-col items-center justify-center gap-3">
-          <p className="text-sm text-muted-foreground">로그인이 필요합니다</p>
-          <button
-            onClick={requireLogin}
-            className="rounded-xl bg-gradient-hero px-4 py-2 text-sm font-semibold text-primary-foreground"
-          >
-            로그인하기
-          </button>
-        </div>
-      </AppLayout>
-    );
-  }
-
-  if (!user || isStepLoading || isBadgesLoading || !currentCity) {
+  if ((isLoggedIn && (!user || isStepLoading || isBadgesLoading)) || !currentCity || !activeStepInfo) {
     return (
       <AppLayout>
         <div className="flex h-[60vh] items-center justify-center">
