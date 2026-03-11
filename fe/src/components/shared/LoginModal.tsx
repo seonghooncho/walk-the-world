@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import GoogleLoginButton from "@/components/shared/GoogleLoginButton";
 import KakaoLoginButton from "@/components/shared/KakaoLoginButton";
+import { isValidSignupPassword, normalizePassword, PASSWORD_RULE_MESSAGE } from "@/lib/password";
 
 type Mode = "login" | "signup";
 
@@ -27,11 +28,21 @@ const LoginModal = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const normalizedEmail = email.trim();
+    const normalizedPassword = normalizePassword(password);
+    const normalizedName = name.trim();
+
+    if (mode === "signup" && !isValidSignupPassword(normalizedPassword)) {
+      toast.error(PASSWORD_RULE_MESSAGE);
+      return;
+    }
+
     try {
       if (mode === "login") {
-        await login.mutateAsync({ email, password });
+        await login.mutateAsync({ email: normalizedEmail, password: normalizedPassword });
       } else {
-        await signup.mutateAsync({ email, password, name });
+        await signup.mutateAsync({ email: normalizedEmail, password: normalizedPassword, name: normalizedName });
       }
       toast.success(mode === "login" ? "로그인 성공!" : "회원가입 완료!");
       onLoginSuccess();
@@ -129,9 +140,6 @@ const LoginModal = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="비밀번호"
                   required
-                  minLength={6}
-                  pattern="^(?=.*[A-Za-z])(?=.*\\d).{6,100}$"
-                  title="비밀번호는 영문과 숫자를 포함해 6자 이상이어야 합니다"
                   className="w-full rounded-xl border border-input bg-background py-2.5 pl-10 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
                 <button
@@ -142,6 +150,9 @@ const LoginModal = () => {
                   {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              {mode === "signup" && (
+                <p className="px-1 text-xs text-muted-foreground">{PASSWORD_RULE_MESSAGE}</p>
+              )}
               <button
                 type="submit"
                 disabled={isLoading}
