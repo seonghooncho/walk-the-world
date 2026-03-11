@@ -59,6 +59,23 @@ class KakaoOAuthServiceTest {
   }
 
   @Test
+  void buildAuthorizationUriAllowsMobileCustomSchemeOrigin() {
+    URI authorizationUri =
+        kakaoOAuthService.buildAuthorizationUri("walkworld%3A%2F%2F%2F", "%2F", request());
+
+    String state =
+        UriComponentsBuilder.fromUri(authorizationUri)
+            .build()
+            .getQueryParams()
+            .getFirst("state");
+
+    String payload = decodeJwtPayload(state);
+
+    assertTrue(payload.contains("\"frontendOrigin\":\"walkworld:///\""));
+    assertTrue(payload.contains("\"redirectPath\":\"/\""));
+  }
+
+  @Test
   void buildAuthorizationUriUsesApiHostForCallbackRedirectUri() {
     URI authorizationUri =
         kakaoOAuthService.buildAuthorizationUri("https://frontend.example.com", "/", request());

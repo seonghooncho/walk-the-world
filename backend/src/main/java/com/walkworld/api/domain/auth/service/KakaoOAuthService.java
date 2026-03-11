@@ -190,22 +190,46 @@ public class KakaoOAuthService {
             throw new AuthException(AuthErrorCode.KAKAO_AUTH_FAILED);
         }
 
-        String normalized = trimmed.endsWith("/") ? trimmed.substring(0, trimmed.length() - 1) : trimmed;
+        String normalized = trimTrailingSlash(trimmed);
         try {
             URI origin = URI.create(normalized);
             String scheme = origin.getScheme();
-            String authority = origin.getRawAuthority();
-            if (!StringUtils.hasText(scheme) || !StringUtils.hasText(authority)) {
-                throw new AuthException(AuthErrorCode.KAKAO_AUTH_FAILED);
-            }
-            if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
+            if (!StringUtils.hasText(scheme)
+                    || !normalized.contains("://")
+                    || StringUtils.hasText(origin.getRawQuery())
+                    || StringUtils.hasText(origin.getRawFragment())) {
                 throw new AuthException(AuthErrorCode.KAKAO_AUTH_FAILED);
             }
 
-            return scheme.toLowerCase() + "://" + authority;
+            if ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme)) {
+                String authority = origin.getRawAuthority();
+                if (!StringUtils.hasText(authority)) {
+                    throw new AuthException(AuthErrorCode.KAKAO_AUTH_FAILED);
+                }
+                return scheme.toLowerCase() + "://" + authority;
+            }
+
+            return normalized;
         } catch (IllegalArgumentException exception) {
             throw new AuthException(AuthErrorCode.KAKAO_AUTH_FAILED);
         }
+    }
+
+    private String trimTrailingSlash(String value) {
+        if (!value.endsWith("/")) {
+            return value;
+        }
+
+        if (value.endsWith("://") || value.endsWith(":///")) {
+            return value;
+        }
+
+        int schemeDelimiterIndex = value.indexOf("://");
+        if (schemeDelimiterIndex < 0) {
+            return value.substring(0, value.length() - 1);
+        }
+
+        return value.substring(0, value.length() - 1);
     }
 
     private String normalizeRedirectPath(String redirectPath) {

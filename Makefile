@@ -6,6 +6,7 @@ TERRAFORM ?= terraform
 ENV ?= prod
 
 .PHONY: help fe-install fe-dev fe-build fe-lint fe-test fe-check \
+	mobile-install mobile-dev mobile-lint mobile-typecheck mobile-check \
 	fe-build-ssm fe-deploy-prod \
 	be-build be-test be-zip be-generate-reference-seed \
 	infra-fmt infra-init-validate infra-validate-prod
@@ -20,6 +21,11 @@ help:
 		'fe-lint            Lint frontend' \
 		'fe-test            Run frontend tests' \
 		'fe-check           Run frontend lint, test, and build' \
+		'mobile-install     Install mobile app dependencies' \
+		'mobile-dev         Run Expo mobile dev server' \
+		'mobile-lint        Lint mobile app' \
+		'mobile-typecheck   Type-check mobile app' \
+		'mobile-check       Run mobile lint and type-check' \
 		'be-build           Build backend' \
 		'be-test            Run backend tests' \
 		'be-zip             Build backend Lambda zip' \
@@ -50,6 +56,20 @@ fe-test:
 	cd fe && $(NPM) run test
 
 fe-check: fe-lint fe-test fe-build
+
+mobile-install:
+	cd mobile && $(NPM) install
+
+mobile-dev:
+	cd mobile && $(NPM) run start
+
+mobile-lint:
+	cd mobile && $(NPM) run lint
+
+mobile-typecheck:
+	cd mobile && $(NPM) run typecheck
+
+mobile-check: mobile-lint mobile-typecheck
 
 be-build:
 	cd backend && $(GRADLE) build
