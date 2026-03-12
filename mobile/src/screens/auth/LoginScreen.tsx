@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Eye, EyeOff, Lock, Mail, User } from "lucide-react-native";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
 import { useIdTokenAuthRequest } from "expo-auth-session/providers/google";
@@ -39,7 +39,22 @@ export function LoginScreen() {
   const signup = useSignup();
   const googleLogin = useGoogleLogin();
 
-  const googleEnabled = useMemo(() => Boolean(googleConfig.webClientId || googleConfig.iosClientId || googleConfig.androidClientId), []);
+  const googleClientIdForPlatform = useMemo(() => {
+    if (Platform.OS === "ios") {
+      return googleConfig.iosClientId;
+    }
+
+    if (Platform.OS === "android") {
+      return googleConfig.androidClientId;
+    }
+
+    if (Platform.OS === "web") {
+      return googleConfig.webClientId;
+    }
+
+    return googleConfig.webClientId || googleConfig.iosClientId || googleConfig.androidClientId;
+  }, []);
+  const googleEnabled = Boolean(googleClientIdForPlatform);
   const [request, response, promptAsync] = useIdTokenAuthRequest({
     webClientId: googleConfig.webClientId,
     iosClientId: googleConfig.iosClientId,
@@ -101,7 +116,10 @@ export function LoginScreen() {
       const startUrl = new URL("/api/auth/v1/oauth/kakao/start", API_BASE_URL);
       startUrl.searchParams.set("frontendOrigin", frontendOrigin);
       startUrl.searchParams.set("redirectPath", "/");
-      await WebBrowser.openAuthSessionAsync(startUrl.toString(), callbackUrl);
+      const result = await WebBrowser.openAuthSessionAsync(startUrl.toString(), callbackUrl);
+      if (result.type === "success" && result.url) {
+        router.replace(`/auth/callback?authResult=${encodeURIComponent(result.url)}` as never);
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "카카오 로그인 시작에 실패했습니다");
     }
@@ -167,7 +185,9 @@ export function LoginScreen() {
             onPress={() => promptAsync()}
             style={[styles.socialButton, !googleEnabled && { opacity: 0.4 }]}
           >
-            <AppText variant="bodyBold">{googleEnabled ? "Google로 시작하기" : "Google 설정 필요"}</AppText>
+            <AppText variant="bodyBold">
+              {googleEnabled ? "Google로 시작하기" : Platform.OS === "ios" ? "Google iOS 설정 필요" : "Google 설정 필요"}
+            </AppText>
           </Pressable>
           <Pressable onPress={startKakaoLogin} style={[styles.socialButton, styles.kakaoButton]}>
             <AppText variant="bodyBold">카카오로 시작하기</AppText>

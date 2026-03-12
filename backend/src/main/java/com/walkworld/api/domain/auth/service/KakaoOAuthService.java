@@ -16,6 +16,7 @@ import java.net.URLEncoder;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Date;
 import javax.crypto.SecretKey;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +48,7 @@ public class KakaoOAuthService {
 
         String normalizedFrontendOrigin = normalizeFrontendOrigin(frontendOrigin);
         String normalizedRedirectPath = normalizeRedirectPath(redirectPath);
+        validateFrontendOrigin(normalizedFrontendOrigin);
         String callbackUri = buildApiBaseUrl(request) + "/api/auth/v1/oauth/kakao/callback";
         String state = createState(normalizedFrontendOrigin, normalizedRedirectPath);
 
@@ -85,6 +87,16 @@ public class KakaoOAuthService {
         OAuthState state = parseStateOrNull(stateToken);
         if (state == null) {
             throw new AuthException(AuthErrorCode.KAKAO_AUTH_FAILED);
+        }
+
+        if (isAppOrigin(state.frontendOrigin())) {
+            return UriComponentsBuilder
+                    .fromUriString(state.frontendOrigin() + CALLBACK_PATH)
+                    .queryParam("redirect", state.redirectPath())
+                    .queryParam("error", "kakao")
+                    .queryParam("message", errorMessage)
+                    .build(true)
+                    .toUri();
         }
 
         return UriComponentsBuilder
@@ -176,6 +188,10 @@ public class KakaoOAuthService {
     }
 
     private String buildApiBaseUrl(HttpServletRequest request) {
+        if (StringUtils.hasText(oauthProperties.getPublicApiBaseUrl())) {
+            return normalizeFrontendOrigin(oauthProperties.getPublicApiBaseUrl());
+        }
+
         return UriComponentsBuilder
                 .fromHttpUrl(request.getRequestURL().toString())
                 .replacePath(null)
@@ -212,6 +228,46 @@ public class KakaoOAuthService {
             return normalized;
         } catch (IllegalArgumentException exception) {
             throw new AuthException(AuthErrorCode.KAKAO_AUTH_FAILED);
+        }
+    }
+
+    private void validateFrontendOrigin(String frontendOrigin) {
+        String[] allowedOrigins = allowedFrontendOrigins();
+        if (allowedOrigins.length == 0) {
+            return;
+        }
+
+        boolean matched = Arrays.stream(allowedOrigins)
+                .map(String::trim)
+                .filter(StringUtils::hasText)
+                .map(this::normalizeFrontendOrigin)
+                .anyMatch(frontendOrigin::equals);
+
+        if (!matched) {
+            throw new AuthException(AuthErrorCode.KAKAO_AUTH_FAILED);
+        }
+    }
+
+    private String[] allowedFrontendOrigins() {
+        if (!StringUtils.hasText(oauthProperties.getAllowedFrontendOrigins())) {
+            return new String[0];
+        }
+
+        return Arrays.stream(oauthProperties.getAllowedFrontendOrigins().split(","))
+                .map(String::trim)
+                .filter(StringUtils::hasText)
+                .toArray(String[]::new);
+    }
+
+    private boolean isAppOrigin(String frontendOrigin) {
+        try {
+            URI origin = URI.create(frontendOrigin);
+            String scheme = origin.getScheme();
+            return StringUtils.hasText(scheme)
+                    && !"http".equalsIgnoreCase(scheme)
+                    && !"https".equalsIgnoreCase(scheme);
+        } catch (IllegalArgumentException exception) {
+            return false;
         }
     }
 

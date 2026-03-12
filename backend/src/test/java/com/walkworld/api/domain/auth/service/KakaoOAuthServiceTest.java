@@ -76,6 +76,25 @@ class KakaoOAuthServiceTest {
   }
 
   @Test
+  void buildAuthorizationUriRejectsOriginOutsideAllowList() {
+    OAuthProperties oauthProperties = new OAuthProperties();
+    oauthProperties.getKakao().setClientId("kakao-client-id");
+    oauthProperties.setAllowedFrontendOrigins("https://allowed.example.com,walkworld:///");
+
+    JwtProperties jwtProperties = new JwtProperties();
+    jwtProperties.setSecret("test-secret-key-with-at-least-thirty-two-characters");
+
+    KakaoOAuthService restrictedService =
+        new KakaoOAuthService(oauthProperties, jwtProperties, mock(AuthService.class));
+
+    assertThrows(
+        AuthException.class,
+        () ->
+            restrictedService.buildAuthorizationUri(
+                "https://frontend.example.com", "/", request()));
+  }
+
+  @Test
   void buildAuthorizationUriUsesApiHostForCallbackRedirectUri() {
     URI authorizationUri =
         kakaoOAuthService.buildAuthorizationUri("https://frontend.example.com", "/", request());
@@ -87,6 +106,48 @@ class KakaoOAuthServiceTest {
             .getFirst("redirect_uri");
 
     assertEquals("https://api.example.com/api/auth/v1/oauth/kakao/callback", redirectUri);
+  }
+
+  @Test
+  void buildAuthorizationUriUsesConfiguredPublicApiBaseUrlForCallbackRedirectUri() {
+    OAuthProperties oauthProperties = new OAuthProperties();
+    oauthProperties.getKakao().setClientId("kakao-client-id");
+    oauthProperties.setPublicApiBaseUrl("https://walk2world.cloud");
+
+    JwtProperties jwtProperties = new JwtProperties();
+    jwtProperties.setSecret("test-secret-key-with-at-least-thirty-two-characters");
+
+    KakaoOAuthService service =
+        new KakaoOAuthService(oauthProperties, jwtProperties, mock(AuthService.class));
+
+    URI authorizationUri =
+        service.buildAuthorizationUri("https://frontend.example.com", "/", request());
+
+    String redirectUri =
+        UriComponentsBuilder.fromUri(authorizationUri)
+            .build()
+            .getQueryParams()
+            .getFirst("redirect_uri");
+
+    assertEquals("https://walk2world.cloud/api/auth/v1/oauth/kakao/callback", redirectUri);
+  }
+
+  @Test
+  void buildFailureRedirectUsesCallbackPathForMobileScheme() {
+    URI authorizationUri =
+        kakaoOAuthService.buildAuthorizationUri("walkworld%3A%2F%2F%2F", "%2Ffeed", request());
+
+    String state =
+        UriComponentsBuilder.fromUri(authorizationUri)
+            .build()
+            .getQueryParams()
+            .getFirst("state");
+
+    URI failureRedirect = kakaoOAuthService.buildFailureRedirect(state, "access_denied");
+
+    assertEquals(
+        "walkworld:///auth/callback?redirect=/feed&error=kakao&message=access_denied",
+        failureRedirect.toString());
   }
 
   private MockHttpServletRequest request() {

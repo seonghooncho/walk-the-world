@@ -22,6 +22,39 @@ variable "project_name" {
   default     = "walkworld"
 }
 
+variable "custom_domain" {
+  description = "Primary custom frontend domain. Leave blank to keep the CloudFront default domain."
+  type        = string
+  default     = ""
+}
+
+variable "additional_frontend_domains" {
+  description = "Additional frontend hostnames to attach to CloudFront and publish in Cloudflare."
+  type        = list(string)
+  default     = []
+}
+
+variable "cloudflare_account_id" {
+  description = "Cloudflare account ID used while preparing the zone in the dashboard"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "cloudflare_zone_id" {
+  description = "Existing Cloudflare zone ID for the custom domain"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "cloudflare_api_token" {
+  description = "Cloudflare API token with Zone/DNS edit permissions"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 variable "db_name" {
   description = "Application database name"
   type        = string
@@ -60,6 +93,20 @@ variable "google_client_id" {
   default     = ""
 }
 
+variable "google_ios_client_id" {
+  description = "Optional Google OAuth client id for iOS mobile app"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "google_android_client_id" {
+  description = "Optional Google OAuth client id for Android mobile app"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "kakao_client_id" {
   description = "Optional Kakao OAuth client id"
   type        = string
@@ -71,6 +118,18 @@ variable "kakao_client_secret" {
   description = "Optional Kakao OAuth client secret"
   type        = string
   sensitive   = true
+  default     = ""
+}
+
+variable "public_api_base_url" {
+  description = "Optional canonical public base URL used by frontend and OAuth callbacks"
+  type        = string
+  default     = ""
+}
+
+variable "oauth_allowed_frontend_origins" {
+  description = "Optional comma-separated allowlist for OAuth frontend origins"
+  type        = string
   default     = ""
 }
 

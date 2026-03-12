@@ -6,7 +6,7 @@ TERRAFORM ?= terraform
 ENV ?= prod
 
 .PHONY: help fe-install fe-dev fe-build fe-lint fe-test fe-check \
-	mobile-install mobile-dev mobile-lint mobile-typecheck mobile-check \
+	mobile-install mobile-env-ssm mobile-dev mobile-lint mobile-typecheck mobile-check \
 	fe-build-ssm fe-deploy-prod \
 	be-build be-test be-zip be-generate-reference-seed \
 	infra-fmt infra-init-validate infra-validate-prod
@@ -22,6 +22,7 @@ help:
 		'fe-test            Run frontend tests' \
 		'fe-check           Run frontend lint, test, and build' \
 		'mobile-install     Install mobile app dependencies' \
+		'mobile-env-ssm     Write mobile/.env.local from SSM (ENV=prod)' \
 		'mobile-dev         Run Expo mobile dev server' \
 		'mobile-lint        Lint mobile app' \
 		'mobile-typecheck   Type-check mobile app' \
@@ -59,6 +60,9 @@ fe-check: fe-lint fe-test fe-build
 
 mobile-install:
 	cd mobile && $(NPM) install
+
+mobile-env-ssm:
+	bin/mobile-env-from-ssm.sh $(ENV)
 
 mobile-dev:
 	cd mobile && $(NPM) run start
