@@ -91,8 +91,10 @@ cd android
 
 WORKLETS_ROOT="${MOBILE_DIR}/node_modules/react-native-worklets/android/build"
 LEGACY_WORKLETS_ROOT="${WORKLETS_ROOT}/intermediates/cmake/release/obj"
+TARGET_ABIS_CSV="${ANDROID_TARGET_ABIS:-arm64-v8a,armeabi-v7a,x86,x86_64}"
+IFS=',' read -r -a TARGET_ABIS <<< "${TARGET_ABIS_CSV}"
 
-for ABI in arm64-v8a armeabi-v7a x86 x86_64; do
+for ABI in "${TARGET_ABIS[@]}"; do
   WORKLETS_SO="$(find "${WORKLETS_ROOT}/intermediates/cxx" -path "*/obj/${ABI}/libworklets.so" | head -n 1)"
   if [[ -z "${WORKLETS_SO}" ]]; then
     echo "ABI ${ABI}용 libworklets.so를 찾을 수 없습니다." >&2
