@@ -5,6 +5,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { View } from "react-native";
 import { AuthProvider } from "@/src/contexts/AuthContext";
 import { LoginPromptSheet } from "@/src/components/shared/LoginPromptSheet";
+import { StepSyncProvider } from "@/src/providers/StepSyncProvider";
 import { ToastProvider } from "@/src/providers/ToastProvider";
 import { palette } from "@/src/lib/theme";
 
@@ -23,12 +24,14 @@ export function AppProviders({ children, onLayout }: { children: ReactNode; onLa
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <ToastProvider>
-              <View style={{ flex: 1, backgroundColor: palette.background }} onLayout={onLayout}>
-                {children}
-                <LoginPromptSheet />
-              </View>
-            </ToastProvider>
+            <StepSyncProvider>
+              <ToastProvider>
+                <View style={{ flex: 1, backgroundColor: palette.background }} onLayout={onLayout}>
+                  {children}
+                  <LoginPromptSheet />
+                </View>
+              </ToastProvider>
+            </StepSyncProvider>
           </AuthProvider>
         </QueryClientProvider>
       </SafeAreaProvider>

@@ -10,10 +10,16 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.walkworld.mobile"
+      "bundleIdentifier": "com.walkworld.mobile",
+      "infoPlist": {
+        "NSMotionUsageDescription": "실제 걸음 수를 여행 진행도에 반영하려면 모션 및 피트니스 데이터 접근 권한이 필요합니다."
+      }
     },
     "android": {
       "package": "com.walkworld.mobile",
+      "permissions": [
+        "android.permission.ACTIVITY_RECOGNITION"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
