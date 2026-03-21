@@ -1,0 +1,16 @@
+custom_domain               = "walk2world.cloud"
+additional_frontend_domains = ["www.walk2world.cloud"]
+
+# Keep secrets out of Git. Pass the real values via TF_VAR_* or a local tfvars file.
+cloudflare_account_id = "your-cloudflare-account-id"
+cloudflare_zone_id    = "your-existing-zone-id"
+cloudflare_api_token  = "your-cloudflare-api-token"
+
+google_client_id         = "your-google-web-client-id"
+google_ios_client_id     = "your-google-ios-client-id"
+google_android_client_id = "your-google-android-client-id"
+kakao_client_id          = "your-kakao-rest-api-key"
+kakao_client_secret      = "your-kakao-client-secret"
+
+public_api_base_url            = "https://walk2world.cloud"
+oauth_allowed_frontend_origins = "https://walk2world.cloud,https://www.walk2world.cloud,walkworld:///,walkworld://"

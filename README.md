@@ -13,8 +13,10 @@
 ## 저장소 구조
 
 - `fe/`: React, Vite, Tailwind 기반 프론트엔드 앱과 관련 설정
+- `mobile/`: Expo, React Native 기반 모바일 앱
 - `fe/src/mocks`: 데모/목 데이터
 - `fe/src/lib/api`, `fe/src/hooks/api`: API 클라이언트와 React Query 훅
+- `mobile/src/lib/api`, `mobile/src/hooks`: 모바일 API 클라이언트와 상태/쿼리 훅
 - `backend/`: Spring Boot 기반 API 서버
 - `ai/`: AI 합성 전용 Lambda 소스
 - `infra/terraform/init`: Terraform state용 S3 + DynamoDB bootstrap
@@ -30,6 +32,7 @@
 
 ```sh
 make fe-check
+make mobile-check
 make be-test
 make infra-validate-prod
 ```
@@ -50,6 +53,37 @@ make fe-deploy-prod
 ```sh
 make fe-check
 ```
+
+## 모바일 앱 작업
+
+모바일 앱은 `mobile/` 아래의 Expo Router + React Native 구조로 관리한다. 웹과 동일한 디자인 토큰, 정적 도시/미션 데이터, 백엔드 API 계약을 기준으로 구현한다.
+
+```sh
+make mobile-install
+make mobile-env-ssm ENV=prod
+make mobile-dev
+make mobile-check
+```
+
+필수 환경변수:
+
+```text
+EXPO_PUBLIC_API_BASE_URL
+```
+
+선택 환경변수:
+
+```text
+EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
+EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID
+EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID
+```
+
+- 홈/노선도는 미로그인 사용자에게도 도쿄 preview 상태를 보여준다.
+- 도시, 채팅, 피드, 프로필 등 사용자 활동 화면은 로그인 후 접근한다.
+- 카카오 로그인은 기존 백엔드 OAuth 경로를 그대로 사용하되 모바일 스킴 콜백(`walkworld://`)을 허용한다.
+- 모바일 local env는 `make mobile-env-ssm ENV=prod`로 `/walkworld/{env}/mobile/*` SSM 값을 내려받아 맞춘다.
+- 현재 운영 기준으로 Android Google OAuth client는 연결돼 있고, iOS Google OAuth는 Apple Developer 팀 미등록으로 비활성 상태다.
 
 ## 백엔드 작업
 
@@ -109,10 +143,15 @@ export AWS_PROFILE=<aws-profile>
 
 ```sh
 export TF_VAR_google_client_id=<google-oauth-client-id>
+export TF_VAR_google_ios_client_id=<google-ios-client-id>
+export TF_VAR_google_android_client_id=<google-android-client-id>
+export TF_VAR_public_api_base_url=https://walk2world.cloud
+export TF_VAR_oauth_allowed_frontend_origins=https://walk2world.cloud,https://www.walk2world.cloud,walkworld:///,walkworld://
 export TF_VAR_jwt_secret=<custom-jwt-secret>
 ```
 
 - `google_client_id`를 비워두면 Google 로그인 버튼은 비활성 안내 상태로 동작한다.
+- `google_ios_client_id`, `google_android_client_id`를 함께 넣으면 모바일 Google ID token도 backend allowlist에서 검증할 수 있다.
 - `jwt_secret`를 비워두면 Terraform이 안전한 랜덤 값을 생성해 SSM에 저장한다.
 
 ## 현재 배포 순서

@@ -61,15 +61,18 @@ resource "aws_lambda_function" "backend" {
 
   environment {
     variables = {
-      SPRING_PROFILES_ACTIVE = var.environment
-      DB_URL                 = aws_ssm_parameter.backend_db_url.value
-      DB_USERNAME            = aws_ssm_parameter.backend_db_username.value
-      DB_PASSWORD            = aws_ssm_parameter.backend_db_password.value
-      JWT_SECRET             = aws_ssm_parameter.backend_jwt_secret.value
-      S3_BUCKET              = aws_ssm_parameter.backend_s3_bucket.value
-      AI_API_BASE_URL        = aws_ssm_parameter.backend_ai_api_base_url.value
-      KAKAO_CLIENT_ID        = aws_ssm_parameter.backend_kakao_client_id.value
-      KAKAO_CLIENT_SECRET    = aws_ssm_parameter.backend_kakao_client_secret.value
+      SPRING_PROFILES_ACTIVE          = var.environment
+      DB_URL                          = aws_ssm_parameter.backend_db_url.value
+      DB_USERNAME                     = aws_ssm_parameter.backend_db_username.value
+      DB_PASSWORD                     = aws_ssm_parameter.backend_db_password.value
+      JWT_SECRET                      = aws_ssm_parameter.backend_jwt_secret.value
+      S3_BUCKET                       = aws_ssm_parameter.backend_s3_bucket.value
+      AI_API_BASE_URL                 = aws_ssm_parameter.backend_ai_api_base_url.value
+      KAKAO_CLIENT_ID                 = aws_ssm_parameter.backend_kakao_client_id.value
+      KAKAO_CLIENT_SECRET             = aws_ssm_parameter.backend_kakao_client_secret.value
+      OAUTH_ALLOWED_FRONTEND_ORIGINS  = try(aws_ssm_parameter.backend_oauth_allowed_frontend_origins[0].value, "")
+      OAUTH_PUBLIC_API_BASE_URL       = try(aws_ssm_parameter.backend_oauth_public_api_base_url[0].value, "")
+      OAUTH_GOOGLE_ALLOWED_CLIENT_IDS = try(aws_ssm_parameter.backend_oauth_google_allowed_client_ids[0].value, "")
     }
   }
 

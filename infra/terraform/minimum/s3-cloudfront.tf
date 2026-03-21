@@ -2,6 +2,18 @@
 # S3 buckets (uploads + frontend hosting)
 # ============================================================
 
+data "aws_cloudfront_cache_policy" "caching_optimized" {
+  name = "Managed-CachingOptimized"
+}
+
+data "aws_cloudfront_cache_policy" "caching_disabled" {
+  name = "Managed-CachingDisabled"
+}
+
+data "aws_cloudfront_origin_request_policy" "all_viewer_except_host_header" {
+  name = "Managed-AllViewerExceptHostHeader"
+}
+
 # --- Image uploads ---
 resource "aws_s3_bucket" "uploads" {
   bucket = "${var.project_name}-uploads-${var.environment}"
@@ -69,10 +81,39 @@ resource "aws_cloudfront_origin_access_identity" "frontend" {
   comment = "${local.resource_prefix} frontend"
 }
 
+resource "aws_cloudfront_function" "spa_rewrite" {
+  name    = "${local.resource_prefix}-spa-rewrite"
+  runtime = "cloudfront-js-1.0"
+  publish = true
+  comment = "Rewrite SPA routes while keeping /api/* on API Gateway."
+  code    = <<-EOT
+    function handler(event) {
+      var request = event.request;
+      var uri = request.uri;
+
+      if (uri.startsWith('/api/')) {
+        return request;
+      }
+
+      if (uri.endsWith('/')) {
+        request.uri = uri + 'index.html';
+        return request;
+      }
+
+      if (uri.indexOf('.') === -1) {
+        request.uri = '/index.html';
+      }
+
+      return request;
+    }
+  EOT
+}
+
 resource "aws_cloudfront_distribution" "frontend" {
   enabled             = true
   default_root_object = "index.html"
   price_class         = "PriceClass_200" # Asia + NA + Europe
+  aliases             = local.frontend_aliases
 
   origin {
     domain_name = aws_s3_bucket.frontend.bucket_regional_domain_name
@@ -83,33 +124,41 @@ resource "aws_cloudfront_distribution" "frontend" {
     }
   }
 
+  origin {
+    domain_name = replace(aws_apigatewayv2_api.backend.api_endpoint, "https://", "")
+    origin_id   = "http-api"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
   default_cache_behavior {
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]
     cached_methods         = ["GET", "HEAD"]
     target_origin_id       = "s3-frontend"
     viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+    cache_policy_id        = data.aws_cloudfront_cache_policy.caching_optimized.id
 
-    forwarded_values {
-      query_string = false
-      cookies { forward = "none" }
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.spa_rewrite.arn
     }
-
-    min_ttl     = 0
-    default_ttl = 3600
-    max_ttl     = 86400
   }
 
-  # SPA: return index.html for 404s
-  custom_error_response {
-    error_code         = 404
-    response_code      = 200
-    response_page_path = "/index.html"
-  }
-
-  custom_error_response {
-    error_code         = 403
-    response_code      = 200
-    response_page_path = "/index.html"
+  ordered_cache_behavior {
+    path_pattern             = "/api/*"
+    target_origin_id         = "http-api"
+    viewer_protocol_policy   = "https-only"
+    allowed_methods          = ["GET", "HEAD", "OPTIONS", "PUT", "PATCH", "POST", "DELETE"]
+    cached_methods           = ["GET", "HEAD", "OPTIONS"]
+    compress                 = true
+    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer_except_host_header.id
   }
 
   restrictions {
@@ -117,7 +166,10 @@ resource "aws_cloudfront_distribution" "frontend" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    acm_certificate_arn            = local.custom_domain_enabled ? aws_acm_certificate_validation.frontend[0].certificate_arn : null
+    cloudfront_default_certificate = local.custom_domain_enabled ? false : true
+    minimum_protocol_version       = local.custom_domain_enabled ? "TLSv1.2_2021" : "TLSv1"
+    ssl_support_method             = local.custom_domain_enabled ? "sni-only" : null
   }
 
   tags = { Name = "${local.resource_prefix}-frontend-cdn" }

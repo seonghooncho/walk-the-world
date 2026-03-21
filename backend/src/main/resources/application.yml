@@ -29,6 +29,10 @@ server:
     context-path: /
 
 oauth:
+  allowed-frontend-origins: ${OAUTH_ALLOWED_FRONTEND_ORIGINS:}
+  public-api-base-url: ${OAUTH_PUBLIC_API_BASE_URL:}
+  google:
+    allowed-client-ids: ${OAUTH_GOOGLE_ALLOWED_CLIENT_IDS:}
   kakao:
     client-id: ${KAKAO_CLIENT_ID:}
     client-secret: ${KAKAO_CLIENT_SECRET:}

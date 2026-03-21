@@ -11,7 +11,16 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "oauth")
 public class OAuthProperties {
 
+    private String allowedFrontendOrigins;
+    private String publicApiBaseUrl;
+    private final Google google = new Google();
     private final Kakao kakao = new Kakao();
+
+    @Getter
+    @Setter
+    public static class Google {
+        private String allowedClientIds;
+    }
 
     @Getter
     @Setter

@@ -6,6 +6,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 5.0"
+    }
     neon = {
       source  = "kislerdm/neon"
       version = "~> 0.9"
@@ -33,6 +37,23 @@ provider "aws" {
   }
 }
 
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+
+  default_tags {
+    tags = {
+      Project     = var.project_name
+      Environment = var.environment
+      ManagedBy   = "terraform"
+    }
+  }
+}
+
+provider "cloudflare" {
+  api_token = var.cloudflare_api_token
+}
+
 data "aws_ssm_parameter" "neon_api_key" {
   name            = "/walkworld/prod/infra/NEON_API_KEY"
   with_decryption = true
@@ -49,23 +70,37 @@ provider "neon" {
 module "platform" {
   source = "../.."
 
-  aws_region            = var.aws_region
-  environment           = var.environment
-  frontend_platform     = var.frontend_platform
-  project_name          = var.project_name
-  db_name               = var.db_name
-  db_username           = var.db_username
-  neon_org_id           = data.aws_ssm_parameter.neon_org_id.value
-  neon_region_id        = var.neon_region_id
-  neon_pg_version       = var.neon_pg_version
-  jwt_secret            = var.jwt_secret
-  google_client_id      = var.google_client_id
-  kakao_client_id       = var.kakao_client_id
-  kakao_client_secret   = var.kakao_client_secret
-  lambda_memory         = var.lambda_memory
-  lambda_timeout        = var.lambda_timeout
-  ai_lambda_memory      = var.ai_lambda_memory
-  ai_lambda_timeout     = var.ai_lambda_timeout
-  lambda_package_path   = abspath("${path.root}/../../../../../backend/build/distributions/walkworld-api.zip")
-  ai_lambda_source_path = abspath("${path.root}/../../../../../ai/src")
+  providers = {
+    aws           = aws
+    aws.us_east_1 = aws.us_east_1
+    cloudflare    = cloudflare
+  }
+
+  aws_region                     = var.aws_region
+  environment                    = var.environment
+  frontend_platform              = var.frontend_platform
+  project_name                   = var.project_name
+  custom_domain                  = var.custom_domain
+  additional_frontend_domains    = var.additional_frontend_domains
+  cloudflare_account_id          = var.cloudflare_account_id
+  cloudflare_zone_id             = var.cloudflare_zone_id
+  db_name                        = var.db_name
+  db_username                    = var.db_username
+  neon_org_id                    = data.aws_ssm_parameter.neon_org_id.value
+  neon_region_id                 = var.neon_region_id
+  neon_pg_version                = var.neon_pg_version
+  jwt_secret                     = var.jwt_secret
+  google_client_id               = var.google_client_id
+  google_ios_client_id           = var.google_ios_client_id
+  google_android_client_id       = var.google_android_client_id
+  kakao_client_id                = var.kakao_client_id
+  kakao_client_secret            = var.kakao_client_secret
+  public_api_base_url            = var.public_api_base_url
+  oauth_allowed_frontend_origins = var.oauth_allowed_frontend_origins
+  lambda_memory                  = var.lambda_memory
+  lambda_timeout                 = var.lambda_timeout
+  ai_lambda_memory               = var.ai_lambda_memory
+  ai_lambda_timeout              = var.ai_lambda_timeout
+  lambda_package_path            = abspath("${path.root}/../../../../../backend/build/distributions/walkworld-api.zip")
+  ai_lambda_source_path          = abspath("${path.root}/../../../../../ai/src")
 }

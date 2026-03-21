@@ -19,8 +19,10 @@ import com.walkworld.api.domain.currency.entity.UserCurrency;
 import com.walkworld.api.domain.currency.repository.UserCurrencyRepository;
 import com.walkworld.api.domain.user.entity.User;
 import com.walkworld.api.domain.user.repository.UserRepository;
+import com.walkworld.api.global.config.OAuthProperties;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +34,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 @Slf4j
@@ -49,6 +52,7 @@ public class AuthService {
   private final UserCurrencyRepository currencyRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtProvider jwtProvider;
+  private final OAuthProperties oauthProperties;
 
   public TokenResDTO signup(SignupReqDTO request) {
     if (userRepository.existsByEmail(request.getEmail())) {
@@ -227,24 +231,60 @@ public class AuthService {
         throw new AuthException(AuthErrorCode.GOOGLE_AUTH_FAILED);
       }
 
-      GoogleUserInfo info = new GoogleUserInfo();
-      info.setSub((String) body.get("sub"));
-      info.setEmail((String) body.get("email"));
-      info.setName((String) body.get("name"));
-      info.setPicture((String) body.get("picture"));
-      info.setEmailVerified("true".equals(String.valueOf(body.get("email_verified"))));
-
-      if (info.getSub() == null) {
-        throw new AuthException(AuthErrorCode.GOOGLE_AUTH_FAILED);
-      }
-
-      return info;
+      return mapGoogleUserInfo(body);
     } catch (AuthException exception) {
       throw exception;
     } catch (Exception exception) {
       log.error("Google ID token verification failed", exception);
       throw new AuthException(AuthErrorCode.GOOGLE_AUTH_FAILED);
     }
+  }
+
+  GoogleUserInfo mapGoogleUserInfo(Map body) {
+    String audience = body.get("aud") != null ? String.valueOf(body.get("aud")) : null;
+    validateGoogleAudience(audience);
+
+    GoogleUserInfo info = new GoogleUserInfo();
+    info.setSub((String) body.get("sub"));
+    info.setEmail((String) body.get("email"));
+    info.setName((String) body.get("name"));
+    info.setPicture((String) body.get("picture"));
+    info.setEmailVerified("true".equals(String.valueOf(body.get("email_verified"))));
+
+    if (info.getSub() == null) {
+      throw new AuthException(AuthErrorCode.GOOGLE_AUTH_FAILED);
+    }
+
+    return info;
+  }
+
+  private void validateGoogleAudience(String audience) {
+    String[] allowedClientIds = allowedGoogleClientIds();
+    if (allowedClientIds.length == 0) {
+      return;
+    }
+
+    boolean matched =
+        StringUtils.hasText(audience)
+            && Arrays.stream(allowedClientIds)
+                .map(String::trim)
+                .filter(StringUtils::hasText)
+                .anyMatch(audience::equals);
+
+    if (!matched) {
+      throw new AuthException(AuthErrorCode.GOOGLE_AUTH_FAILED);
+    }
+  }
+
+  private String[] allowedGoogleClientIds() {
+    if (!StringUtils.hasText(oauthProperties.getGoogle().getAllowedClientIds())) {
+      return new String[0];
+    }
+
+    return Arrays.stream(oauthProperties.getGoogle().getAllowedClientIds().split(","))
+        .map(String::trim)
+        .filter(StringUtils::hasText)
+        .toArray(String[]::new);
   }
 
   private User createKakaoUser(KakaoUserInfo kakaoUser) {
