@@ -3,11 +3,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { UserPlus, MessageCircle, Heart, PenSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
+import PageHeader from "@/components/layout/PageHeader";
 import UserAvatar from "@/components/shared/UserAvatar";
 import PostCard from "@/components/shared/PostCard";
 import CreatePostSheet from "@/components/shared/CreatePostSheet";
 import FriendAddModal from "@/components/shared/FriendAddModal";
 import ProfileDetailSheet from "@/components/shared/ProfileDetailSheet";
+import EmptyState from "@/components/shared/EmptyState";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChatRooms, useCityMembers, useEnsureChatRoom, usePosts } from "@/hooks/useApi";
 import { findCityById, getStaticCities, sortPostsNewestFirst, toUiPost, toUiProfile, type UiProfile } from "@/lib/city-utils";
@@ -78,13 +80,13 @@ const CityPage = () => {
 
   return (
     <AppLayout>
-      <div className="border-b border-border bg-card px-4 pb-5 pt-12">
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">도시 커뮤니티</p>
-          <h1 className="mt-0.5 text-xl font-bold text-foreground">
-            {city.countryFlag} {city.name}
-          </h1>
-          <p className="mt-1 text-[13px] text-muted-foreground">{members.length}명이 이 도시에 있습니다</p>
+      <PageHeader title={`${city.countryFlag} ${city.name}`} subtitle={`${members.length}명이 이 도시에서 여행 중`} />
+
+      <div className="border-b border-border bg-card px-4 py-4">
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl bg-gradient-ocean p-4 text-white">
+          <p className="text-[11px] font-semibold text-white/70">도시 커뮤니티</p>
+          <h2 className="mt-1 text-lg font-bold">같은 도시의 여행자와 기록을 나눠보세요</h2>
+          <p className="mt-1 text-[12px] leading-5 text-white/75">미션 인증, 맛집 기록, 친구 추가가 이 도시를 기준으로 이어집니다.</p>
         </motion.div>
       </div>
 
@@ -190,9 +192,20 @@ const CityPage = () => {
             {cityPosts.length > 0 ? (
               cityPosts.map((post) => <PostCard key={post.id} post={post} />)
             ) : (
-              <div className="py-16 text-center">
-                <p className="text-[13px] text-muted-foreground">아직 게시물이 없어요</p>
-              </div>
+              <EmptyState
+                icon={PenSquare}
+                title="아직 도시 기록이 없어요"
+                description="첫 게시물을 남기면 같은 도시의 여행자들이 이곳에서 대화를 시작할 수 있습니다."
+                action={
+                  <button
+                    type="button"
+                    onClick={() => setShowCreatePost(true)}
+                    className="pressable rounded-xl bg-primary px-4 py-2.5 text-[13px] font-bold text-primary-foreground"
+                  >
+                    첫 게시물 작성
+                  </button>
+                }
+              />
             )}
           </motion.div>
         )}

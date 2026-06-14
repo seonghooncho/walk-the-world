@@ -2,6 +2,8 @@
 
 > 걷기 기반 가상 여행 소셜 앱의 UI/UX 시스템 문서
 
+> 최신 웹 레이어, safe-area, QA 기준은 [docs/design/DESIGN_GUIDE.md](docs/design/DESIGN_GUIDE.md)와 [docs/testing/WEB_QA_MATRIX.md](docs/testing/WEB_QA_MATRIX.md)를 우선 확인한다.
+
 ---
 
 ## 근본 목적

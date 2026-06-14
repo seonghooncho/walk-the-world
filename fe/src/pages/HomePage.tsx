@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Footprints, MapPin, Utensils, ArrowRight, Trophy, Ticket } from "lucide-react";
+import { Footprints, MapPin, Utensils, ArrowRight, Trophy, Ticket, Compass, LogIn } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import StepProgressRing from "@/components/shared/StepProgressRing";
 import FriendCouponBadge from "@/components/shared/FriendCouponBadge";
@@ -77,18 +77,25 @@ const HomePage = () => {
   const nextCityName = activeStepInfo.nextCityName ?? "최종 도시";
   const totalStepsLabel = (isLoggedIn ? user?.totalSteps : activeStepInfo.totalSteps)?.toLocaleString() ?? "0";
   const couponCount = isLoggedIn ? currency?.coupons ?? user?.coupons ?? 0 : GUEST_PREVIEW_COUPONS;
+  const remainingStepsLabel = activeStepInfo.stepsToNextCity.toLocaleString();
 
   return (
     <AppLayout>
-      <div className="relative h-52 overflow-hidden">
+      <div className="relative h-60 overflow-hidden">
         <img src={cityTokyoImg} alt={currentCity.name} className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
-        <div className="absolute bottom-10 left-4 right-4">
+        <div className="absolute bottom-12 left-4 right-4">
           <motion.div {...fade(0)}>
-            <p className="text-[11px] font-medium uppercase tracking-wider text-white/60">현재 위치</p>
-            <h1 className="mt-0.5 text-xl font-bold text-white">
+            <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur">
+              <Compass className="h-3 w-3" />
+              {isLoggedIn ? "현재 여행지" : "도쿄 preview"}
+            </div>
+            <h1 className="text-2xl font-extrabold leading-tight text-white">
               {currentCity.countryFlag} {currentCity.name}, {currentCity.country}
             </h1>
+            <p className="mt-1 text-[13px] leading-5 text-white/75">
+              {nextCityName}까지 {remainingStepsLabel}보 남았습니다. 오늘의 걸음으로 다음 도시를 열어보세요.
+            </p>
           </motion.div>
         </div>
       </div>
@@ -99,7 +106,7 @@ const HomePage = () => {
             <StepProgressRing progress={progress} size={100} strokeWidth={5}>
               <div className="text-center">
                 <Footprints className="mx-auto mb-0.5 h-4 w-4 text-primary" />
-                <p className="text-lg font-bold text-card-foreground">{totalStepsLabel}</p>
+                <p className="font-num text-lg font-bold text-card-foreground">{totalStepsLabel}</p>
               </div>
             </StepProgressRing>
 
@@ -111,19 +118,29 @@ const HomePage = () => {
               <div className="flex items-center gap-4">
                 <div>
                   <p className="text-[11px] text-muted-foreground">{nextCityName}까지</p>
-                  <p className="text-sm font-semibold text-primary">{activeStepInfo.stepsToNextCity.toLocaleString()} 보</p>
+                  <p className="font-num text-sm font-semibold text-primary">{remainingStepsLabel} 보</p>
                 </div>
                 <div className="h-6 w-px bg-border" />
                 <div>
                   <p className="text-[11px] text-muted-foreground">진행률</p>
                   <div className="flex items-center gap-1">
                     <Trophy className="h-3.5 w-3.5 text-gold" />
-                    <p className="text-sm font-semibold text-card-foreground">{Math.round(progress)}%</p>
+                    <p className="font-num text-sm font-semibold text-card-foreground">{Math.round(progress)}%</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+          {!isLoggedIn && (
+            <button
+              type="button"
+              onClick={() => navigate(`/login?redirect=${encodeURIComponent("/")}`)}
+              className="pressable mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-foreground py-3 text-[13px] font-bold text-background"
+            >
+              <LogIn className="h-4 w-4" />
+              내 걸음으로 이어서 여행하기
+            </button>
+          )}
         </motion.div>
 
         <motion.div {...fade(0.2)} className="grid grid-cols-5 gap-2.5">

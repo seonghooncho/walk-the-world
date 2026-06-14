@@ -15,8 +15,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ["Outfit", "sans-serif"],
-        body: ["Inter", "sans-serif"],
+        display: ["Noto Sans KR", "Outfit", "sans-serif"],
+        body: ["Noto Sans KR", "Outfit", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",

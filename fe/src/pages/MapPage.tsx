@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { ArrowRight, Footprints, MapPinned } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import CityCard from "@/components/shared/CityCard";
 import MissionDetailModal from "@/components/shared/MissionDetailModal";
@@ -52,6 +53,7 @@ const MapPage = () => {
 
   const visitedCount = cities.filter((city) => totalSteps >= city.stepsRequired).length;
   const completionRate = cities.length > 0 ? Math.round((visitedCount / cities.length) * 100) : 0;
+  const nextCityLabel = activeStepInfo.nextCityName ?? "최종 도시";
 
   return (
     <AppLayout>
@@ -63,6 +65,34 @@ const MapPage = () => {
             <h1 className="text-lg font-bold text-white">🌍 나의 여행 노선도</h1>
             <p className="mt-0.5 text-[11px] text-white/70">서울에서 시작하여 지구 한바퀴를 돌아보세요</p>
           </motion.div>
+        </div>
+      </div>
+
+      <div className="border-b border-border/70 bg-card px-4 py-4">
+        <div className="rounded-2xl border border-border bg-background/70 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold text-primary">현재 체크포인트</p>
+              <div className="mt-1 flex min-w-0 items-center gap-2">
+                <span className="truncate text-base font-bold text-foreground">{currentCity.countryFlag} {currentCity.name}</span>
+                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="truncate text-base font-bold text-muted-foreground">{nextCityLabel}</span>
+              </div>
+            </div>
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+              <MapPinned className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
+            <div className="h-full rounded-full bg-gradient-ocean" style={{ width: `${Math.min(100, Math.max(0, activeStepInfo.progressPercent))}%` }} />
+          </div>
+          <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <Footprints className="h-3 w-3" />
+              총 {totalSteps.toLocaleString()}보
+            </span>
+            <span>{nextCityLabel}까지 {activeStepInfo.stepsToNextCity.toLocaleString()}보</span>
+          </div>
         </div>
       </div>
 

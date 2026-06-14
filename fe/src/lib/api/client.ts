@@ -3,6 +3,10 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 let accessToken: string | null = localStorage.getItem("ww_access_token");
 let refreshToken: string | null = localStorage.getItem("ww_refresh_token");
 
+const dispatchTokenChange = () => {
+  window.dispatchEvent(new CustomEvent("ww:auth:tokens-changed", { detail: { authenticated: !!accessToken } }));
+};
+
 export interface ApiMeta {
   page?: number;
   limit?: number;
@@ -34,6 +38,7 @@ export function setTokens(access: string, refresh: string) {
   refreshToken = refresh;
   localStorage.setItem("ww_access_token", access);
   localStorage.setItem("ww_refresh_token", refresh);
+  dispatchTokenChange();
 }
 
 export function clearTokens() {
@@ -41,6 +46,7 @@ export function clearTokens() {
   refreshToken = null;
   localStorage.removeItem("ww_access_token");
   localStorage.removeItem("ww_refresh_token");
+  dispatchTokenChange();
 }
 
 export function getAccessToken() {

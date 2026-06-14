@@ -3,6 +3,12 @@ import { toast } from "sonner";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
 const defaultRedirectPath = () => {
+  const params = new URLSearchParams(window.location.search);
+  const explicitRedirect = params.get("redirect");
+  if (explicitRedirect?.startsWith("/") && !explicitRedirect.startsWith("//")) {
+    return explicitRedirect;
+  }
+
   const currentPath = `${window.location.pathname}${window.location.search}` || "/";
   if (window.location.pathname === "/login" || window.location.pathname === "/auth/callback") {
     return "/";

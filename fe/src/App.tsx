@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/layout/ProtectedRoute";
 import LoginModal from "@/components/shared/LoginModal";
 import HomePage from "./pages/HomePage";
 import MapPage from "./pages/MapPage";
@@ -16,6 +17,7 @@ import PostDetailPage from "./pages/PostDetailPage";
 import BadgeCollectionPage from "./pages/BadgeCollectionPage";
 import LoginPage from "./pages/LoginPage";
 import OAuthCallbackPage from "./pages/OAuthCallbackPage";
+import DemoPage from "./pages/DemoPage";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsPage from "./pages/TermsPage";
@@ -39,18 +41,19 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/demo" element={<DemoPage />} />
             <Route path="/auth/callback" element={<OAuthCallbackPage />} />
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/" element={<HomePage />} />
             <Route path="/map" element={<MapPage />} />
-            <Route path="/city" element={<CityPage />} />
-            <Route path="/feed" element={<FeedPage />} />
-            <Route path="/chat/:chatId" element={<ChatRoomPage />} />
-            <Route path="/post/:postId" element={<PostDetailPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/profile/badges" element={<BadgeCollectionPage />} />
-            <Route path="/add-friend/:userId" element={<AddFriendPage />} />
+            <Route path="/city" element={<ProtectedRoute><CityPage /></ProtectedRoute>} />
+            <Route path="/feed" element={<ProtectedRoute><FeedPage /></ProtectedRoute>} />
+            <Route path="/chat/:chatId" element={<ProtectedRoute><ChatRoomPage /></ProtectedRoute>} />
+            <Route path="/post/:postId" element={<ProtectedRoute><PostDetailPage /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/profile/badges" element={<ProtectedRoute><BadgeCollectionPage /></ProtectedRoute>} />
+            <Route path="/add-friend/:userId" element={<ProtectedRoute><AddFriendPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

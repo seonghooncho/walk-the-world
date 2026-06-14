@@ -23,7 +23,8 @@
 - `infra/terraform/minimum`: 현재 운영 인프라 기준 Terraform 베이스 모듈
 - `infra/terraform/minimum/env/prod`: 단일 Terraform 운영 진입점
 - `bin/`: 보조 스크립트
-- `DESIGN_GUIDE.md`: 프론트엔드 UI/UX 시스템 가이드
+- `docs/`: 제품, 디자인, 테스트 기준 문서
+- `DESIGN_GUIDE.md`: 기존 프론트엔드 UI/UX 시스템 가이드
 - `API_SPEC.md`: 백엔드 API 명세
 
 ## 공통 작업 진입점
@@ -52,7 +53,10 @@ make fe-deploy-prod
 
 ```sh
 make fe-check
+cd fe && npm run e2e
 ```
+
+웹 제품 기준과 QA 시나리오는 [docs/README.md](docs/README.md)를 먼저 확인한다.
 
 ## 모바일 앱 작업
 

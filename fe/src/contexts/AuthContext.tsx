@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
-import { isAuthenticated, clearTokens, getAccessToken } from "@/lib/api";
+import { ApiError, isAuthenticated, clearTokens } from "@/lib/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMe } from "@/hooks/useApi";
 import type { UserProfile } from "@/lib/api";
@@ -35,16 +35,16 @@ const AuthContext = createContext<AuthContextType>({
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
-  const [isLoggedIn, setIsLoggedIn] = useState(isAuthenticated());
+  const [hasToken, setHasToken] = useState(isAuthenticated());
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  // useMe는 토큰이 있을 때만 실행
-  const { data: user, isLoading, error } = useMe();
+  // useMe는 토큰이 있을 때만 실행한다. 토큰 저장과 프로필 조회 성공은 별도 상태로 본다.
+  const { data: user, isLoading, error, refetch } = useMe({ enabled: hasToken });
 
   // 401 이벤트 수신 → 로그인 모달 표시
   useEffect(() => {
     const handler = () => {
-      setIsLoggedIn(false);
+      setHasToken(false);
       setShowLoginModal(true);
     };
     window.addEventListener("ww:auth:expired", handler);
@@ -53,20 +53,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // 토큰 상태 동기화
   useEffect(() => {
-    setIsLoggedIn(isAuthenticated());
-  }, [user]);
+    const syncTokenState = () => {
+      setHasToken(isAuthenticated());
+    };
+    window.addEventListener("ww:auth:tokens-changed", syncTokenState);
+    window.addEventListener("storage", syncTokenState);
+    return () => {
+      window.removeEventListener("ww:auth:tokens-changed", syncTokenState);
+      window.removeEventListener("storage", syncTokenState);
+    };
+  }, []);
 
-  // 토큰 있는데 API 인증 실패 → 토큰 삭제
+  // 인증이 명확히 거부된 경우에만 토큰을 삭제한다. 일시적인 네트워크/서버 오류는 복구 UI가 처리한다.
   useEffect(() => {
-    if (error && getAccessToken()) {
+    if (error instanceof ApiError && error.status === 401) {
       clearTokens();
-      setIsLoggedIn(false);
+      setHasToken(false);
     }
   }, [error]);
 
   const logout = useCallback(() => {
     clearTokens();
-    setIsLoggedIn(false);
+    setHasToken(false);
     qc.clear();
   }, [qc]);
 
@@ -79,15 +87,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const onLoginSuccess = useCallback(() => {
-    setIsLoggedIn(true);
+    setHasToken(isAuthenticated());
     setShowLoginModal(false);
     qc.invalidateQueries({ queryKey: ["me"] });
-  }, [qc]);
+    void refetch();
+  }, [qc, refetch]);
 
   return (
     <AuthContext.Provider
       value={{
-        isLoggedIn,
+        isLoggedIn: hasToken,
         user: user ?? null,
         isLoading,
         showLoginModal,
