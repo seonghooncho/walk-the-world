@@ -36,6 +36,6 @@ public class CurrencyTransaction {
     private LocalDateTime createdAt;
 
     public enum CurrencyType {
-        coupon, heart
+        coupon, heart, ticket
     }
 }

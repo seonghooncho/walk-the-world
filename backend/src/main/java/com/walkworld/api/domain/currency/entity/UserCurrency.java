@@ -22,4 +22,8 @@ public class UserCurrency {
     @Column(nullable = false)
     @Builder.Default
     private Integer hearts = 0;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Integer tickets = 0;
 }

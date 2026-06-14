@@ -10,4 +10,5 @@ import lombok.Data;
 public class CurrencyResponse {
     private Integer coupons;
     private Integer hearts;
+    private Integer tickets;
 }

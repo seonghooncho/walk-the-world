@@ -72,3 +72,15 @@ export function useCurrency() {
     enabled: isAuthenticated(),
   });
 }
+
+export function useExchangeFriendCoupon() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => (await currencyApi.exchangeFriendCoupon()).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["currency"] });
+      queryClient.invalidateQueries({ queryKey: ["me"] });
+    },
+  });
+}
