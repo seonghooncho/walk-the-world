@@ -20,6 +20,7 @@ public class UserConverter {
                 .currentCityId(user.getCurrentCityId())
                 .coupons(currency != null ? currency.getCoupons() : 0)
                 .hearts(currency != null ? currency.getHearts() : 0)
+                .tickets(currency != null && currency.getTickets() != null ? currency.getTickets() : 0)
                 .friendCount(friendCount)
                 .createdAt(user.getCreatedAt())
                 .build();

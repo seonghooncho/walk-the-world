@@ -18,6 +18,7 @@ public class UserProfileResponse {
     private String currentCityId;
     private Integer coupons;
     private Integer hearts;
+    private Integer tickets;
     private Integer friendCount;
     private LocalDateTime createdAt;
 }

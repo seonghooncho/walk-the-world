@@ -71,7 +71,7 @@ public class AuthService {
     userRepository.save(user);
 
     currencyRepository.save(
-        UserCurrency.builder().userId(user.getId()).coupons(2).hearts(5).build());
+        UserCurrency.builder().userId(user.getId()).coupons(2).hearts(5).tickets(0).build());
 
     return generateTokens(user.getId(), false);
   }
@@ -319,7 +319,7 @@ public class AuthService {
     userRepository.save(user);
 
     currencyRepository.save(
-        UserCurrency.builder().userId(user.getId()).coupons(2).hearts(5).build());
+        UserCurrency.builder().userId(user.getId()).coupons(2).hearts(5).tickets(0).build());
 
     return user;
   }
@@ -341,7 +341,7 @@ public class AuthService {
     userRepository.save(user);
 
     currencyRepository.save(
-        UserCurrency.builder().userId(user.getId()).coupons(2).hearts(5).build());
+        UserCurrency.builder().userId(user.getId()).coupons(2).hearts(5).tickets(0).build());
 
     return user;
   }

@@ -48,6 +48,58 @@ type FriendResponse = {
   name: string;
 };
 
+type TodaySessionResponse = {
+  sessionId: number | null;
+  status: "ready" | "active" | "completed" | "abandoned";
+  distanceMeters: number;
+  bonusMeters: number;
+  progressMeters: number;
+  progressPercent: number;
+  ticketsEarned: number;
+  stampsEarned: number;
+  missions: Array<{
+    id: number | null;
+    title: string;
+    proofType: string;
+    status: string;
+    verificationStatus: string;
+  }>;
+};
+
+type LocationPointResponse = {
+  sessionId: number;
+  distanceAddedMeters: number;
+  distanceMeters: number;
+};
+
+type MissionProofResponse = {
+  missionId: number;
+  status: string;
+  verificationStatus: string;
+  storyId: number | null;
+};
+
+type FinishSessionResponse = {
+  sessionId: number;
+  status: string;
+  distanceMeters: number;
+  ticketsEarned: number;
+  stampsEarned: number;
+  couponExchangeAvailable: boolean;
+};
+
+type CurrencyResponse = {
+  coupons: number;
+  hearts: number;
+  tickets: number;
+};
+
+type StoryResponse = {
+  id: number;
+  missionTitle: string;
+  userName: string;
+};
+
 type ChatRoomResponse = {
   id: number;
   friendId: number;
@@ -369,6 +421,103 @@ test.describe("live production QA", () => {
     await expect(page.getByText(fiveHundredChars.slice(0, 80))).toBeVisible();
     await page.goto(`/chat/${room.data.id}`, { waitUntil: "domcontentloaded", timeout: REQUEST_TIMEOUT });
     await expect(page.getByText(fiveHundredChars, { exact: true })).toBeVisible();
+  });
+
+  test("daily walk session records GPS, proof mission, rewards, and coupon exchange", async ({ request }) => {
+    test.setTimeout(120_000);
+
+    const today = await expectOk<TodaySessionResponse>(
+      await request.get("/api/sessions/v1/today", {
+        headers: authHeaders(primary),
+        timeout: REQUEST_TIMEOUT,
+      }),
+      "today session",
+    );
+    expect(["ready", "active", "completed", "abandoned"]).toContain(today.data.status);
+
+    const started = await expectOk<TodaySessionResponse>(
+      await request.post("/api/sessions/v1", {
+        headers: authHeaders(primary),
+        data: {
+          activityType: "walk",
+          environmentHint: "park",
+          startLocation: {
+            latitude: 37.5665,
+            longitude: 126.978,
+            accuracyMeters: 20,
+            recordedAt: new Date().toISOString(),
+          },
+          playlistId: "live-qa",
+        },
+        timeout: REQUEST_TIMEOUT,
+      }),
+      "start daily session",
+    );
+    expect(started.data.sessionId, "started session id").toBeTruthy();
+    expect(started.data.missions.length, "daily mission count").toBe(5);
+
+    const sessionId = started.data.sessionId!;
+    const points = [
+      { latitude: 37.5691, longitude: 126.978, accuracyMeters: 20, recordedAt: new Date().toISOString() },
+      { latitude: 37.5717, longitude: 126.978, accuracyMeters: 20, recordedAt: new Date().toISOString() },
+    ];
+
+    for (const point of points) {
+      await expectOk<LocationPointResponse>(
+        await request.post(`/api/sessions/v1/${sessionId}/locations`, {
+          headers: authHeaders(primary),
+          data: point,
+          timeout: REQUEST_TIMEOUT,
+        }),
+        "record session location",
+      );
+    }
+
+    const mission = started.data.missions.find((candidate) => candidate.proofType === "session" && candidate.id);
+    expect(mission, "session proof mission exists").toBeTruthy();
+
+    const proof = await expectOk<MissionProofResponse>(
+      await request.post(`/api/sessions/v1/${sessionId}/missions/${mission!.id}/proof`, {
+        headers: authHeaders(primary),
+        data: { proofType: "session", text: "live QA 세션 기록으로 인증" },
+        timeout: REQUEST_TIMEOUT,
+      }),
+      "submit session proof",
+    );
+    expect(proof.data.status).toBe("completed");
+    expect(proof.data.verificationStatus).toBe("verified");
+    expect(proof.data.storyId, "text proof creates friend story").toBeTruthy();
+
+    const finished = await expectOk<FinishSessionResponse>(
+      await request.post(`/api/sessions/v1/${sessionId}/finish`, {
+        headers: authHeaders(primary),
+        timeout: REQUEST_TIMEOUT,
+      }),
+      "finish daily session",
+    );
+    expect(finished.data.distanceMeters, "recorded distance").toBeGreaterThan(0);
+    expect(finished.data.ticketsEarned, "ticket reward").toBeGreaterThanOrEqual(1);
+    expect(finished.data.stampsEarned, "stamp reward").toBeGreaterThanOrEqual(1);
+
+    const stories = await expectOk<StoryResponse[]>(
+      await request.get("/api/stories/v1/friends?limit=5", {
+        headers: authHeaders(primary),
+        timeout: REQUEST_TIMEOUT,
+      }),
+      "friend stories",
+    );
+    expect(stories.data.some((story) => story.id === proof.data.storyId)).toBe(true);
+
+    if (finished.data.couponExchangeAvailable) {
+      const exchanged = await expectOk<CurrencyResponse>(
+        await request.post("/api/currency/v1/exchange/friend-coupon", {
+          headers: authHeaders(primary),
+          timeout: REQUEST_TIMEOUT,
+        }),
+        "exchange friend coupon",
+      );
+      expect(exchanged.data.coupons, "coupon balance after exchange").toBeGreaterThanOrEqual(1);
+    }
   });
 
   test("withdrawal clears access and grace-period login restores the account", async ({ request, page }) => {

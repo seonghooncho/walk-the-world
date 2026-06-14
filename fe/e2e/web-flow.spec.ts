@@ -98,6 +98,116 @@ const mockApi = async (page: Page, options: { initialFriend?: boolean } = {}) =>
     isLiked: boolean;
     createdAt: string;
   }> = [];
+  let ticketBalance = 4;
+  let couponBalance = 2;
+  const todaySession = {
+    sessionId: null as number | null,
+    sessionDate: "2026-06-14",
+    status: "ready",
+    activityType: "walk",
+    cityId: "tokyo",
+    cityName: "도쿄",
+    countryFlag: "🇯🇵",
+    dailyGoalMeters: 1000,
+    distanceMeters: 0,
+    bonusMeters: 0,
+    progressMeters: 0,
+    progressPercent: 0,
+    durationSeconds: 0,
+    ticketsEarned: 0,
+    stampsEarned: 0,
+    environmentHint: "city",
+    playlistTitle: "오늘의 산책 플레이리스트",
+    playlistUrl: "https://www.youtube.com/results?search_query=walking+playlist",
+    startedAt: null as string | null,
+    endedAt: null as string | null,
+    missions: [
+      {
+        id: null as number | null,
+        missionKey: "open_sky",
+        title: "뻥 뚫린 오늘 하늘 찍기",
+        description: "산책 중 고개를 들었을 때 보이는 하늘을 사진으로 남겨보세요.",
+        proofType: "photo",
+        emoji: "☁️",
+        bonusMeters: 120,
+        stampReward: "하늘 산책 스탬프",
+        status: "available",
+        verificationStatus: "pending",
+        imageUrl: null,
+        completedAt: null as string | null,
+      },
+      {
+        id: null as number | null,
+        missionKey: "walk_15",
+        title: "15분 산책 유지",
+        description: "오늘의 세션을 15분 이상 이어가면 완료할 수 있어요.",
+        proofType: "session",
+        emoji: "⏱️",
+        bonusMeters: 160,
+        stampReward: "꾸준함 스탬프",
+        status: "available",
+        verificationStatus: "pending",
+        imageUrl: null,
+        completedAt: null as string | null,
+      },
+      {
+        id: null as number | null,
+        missionKey: "walk_note",
+        title: "산책 기분 한 줄",
+        description: "오늘 걸으면서 좋았던 장면을 한 줄로 남겨보세요.",
+        proofType: "text",
+        emoji: "✍️",
+        bonusMeters: 80,
+        stampReward: "기분 기록 스탬프",
+        status: "available",
+        verificationStatus: "pending",
+        imageUrl: null,
+        completedAt: null as string | null,
+      },
+      {
+        id: null as number | null,
+        missionKey: "crosswalk",
+        title: "횡단보도 한 컷",
+        description: "안전하게 멈춘 순간, 횡단보도나 보행자 표식을 찍어보세요.",
+        proofType: "photo",
+        emoji: "🚶",
+        bonusMeters: 100,
+        stampReward: "도시 보행 스탬프",
+        status: "available",
+        verificationStatus: "pending",
+        imageUrl: null,
+        completedAt: null as string | null,
+      },
+      {
+        id: null as number | null,
+        missionKey: "snack_find",
+        title: "산책 간식 발견",
+        description: "편의점이나 가게에서 기분 좋은 간식 하나를 찾아 기록해보세요.",
+        proofType: "photo",
+        emoji: "🍿",
+        bonusMeters: 120,
+        stampReward: "간식 탐험 스탬프",
+        status: "available",
+        verificationStatus: "pending",
+        imageUrl: null,
+        completedAt: null as string | null,
+      },
+    ],
+  };
+  const friendStories = [
+    {
+      id: 1,
+      userId: 2,
+      userName: "민서",
+      userAvatarUrl: null,
+      cityId: "tokyo",
+      missionTitle: "뻥 뚫린 오늘 하늘 찍기",
+      content: "퇴근길 하늘이 여행지 같았어요.",
+      imageUrl: null,
+      imageKey: null,
+      createdAt: "2026-06-14T03:00:00Z",
+    },
+  ];
 
   const fulfill = (route: Route, data: unknown, meta?: unknown) =>
     route.fulfill({ contentType: "application/json", body: JSON.stringify({ ...apiResponse(data), meta }) });
@@ -153,8 +263,9 @@ const mockApi = async (page: Page, options: { initialFriend?: boolean } = {}) =>
         avatarUrl: null,
         totalSteps: 450000,
         currentCityId: "tokyo",
-        coupons: 2,
+        coupons: couponBalance,
         hearts: 5,
+        tickets: ticketBalance,
         friendCount: friendAdded ? 1 : 0,
         createdAt: "2026-06-14T00:00:00Z",
       });
@@ -193,8 +304,15 @@ const mockApi = async (page: Page, options: { initialFriend?: boolean } = {}) =>
       return;
     }
 
-    if (path === "/api/currency/v1") {
-      await fulfill(route, { coupons: 2, hearts: 5 });
+    if (path === "/api/currency/v1" && method === "GET") {
+      await fulfill(route, { coupons: couponBalance, hearts: 5, tickets: ticketBalance });
+      return;
+    }
+
+    if (path === "/api/currency/v1/exchange/friend-coupon" && method === "POST") {
+      ticketBalance -= 3;
+      couponBalance += 1;
+      await fulfill(route, { coupons: couponBalance, hearts: 5, tickets: ticketBalance });
       return;
     }
 
@@ -335,6 +453,81 @@ const mockApi = async (page: Page, options: { initialFriend?: boolean } = {}) =>
       return;
     }
 
+    if (path === "/api/sessions/v1/today" && method === "GET") {
+      await fulfill(route, todaySession);
+      return;
+    }
+
+    if (path === "/api/sessions/v1" && method === "POST") {
+      todaySession.sessionId = 77;
+      todaySession.status = "active";
+      todaySession.startedAt = "2026-06-14T04:00:00Z";
+      todaySession.missions = todaySession.missions.map((mission, index) => ({ ...mission, id: 770 + index }));
+      await fulfill(route, todaySession);
+      return;
+    }
+
+    if (path === "/api/sessions/v1/77/locations" && method === "POST") {
+      todaySession.distanceMeters += 220;
+      todaySession.progressMeters = todaySession.distanceMeters + todaySession.bonusMeters;
+      todaySession.progressPercent = Math.min(100, Math.round((todaySession.progressMeters / todaySession.dailyGoalMeters) * 100));
+      await fulfill(route, {
+        sessionId: 77,
+        distanceMeters: todaySession.distanceMeters,
+        bonusMeters: todaySession.bonusMeters,
+        progressMeters: todaySession.progressMeters,
+        progressPercent: todaySession.progressPercent,
+        distanceAddedMeters: 220,
+      });
+      return;
+    }
+
+    if (path === "/api/sessions/v1/77/missions/771/proof" && method === "POST") {
+      todaySession.missions[1].status = "completed";
+      todaySession.missions[1].verificationStatus = "verified";
+      todaySession.missions[1].completedAt = "2026-06-14T04:05:00Z";
+      todaySession.bonusMeters += todaySession.missions[1].bonusMeters;
+      todaySession.progressMeters = todaySession.distanceMeters + todaySession.bonusMeters;
+      todaySession.progressPercent = Math.min(100, Math.round((todaySession.progressMeters / todaySession.dailyGoalMeters) * 100));
+      todaySession.stampsEarned = 1;
+      await fulfill(route, {
+        missionId: 771,
+        status: "completed",
+        verificationStatus: "verified",
+        bonusMeters: todaySession.missions[1].bonusMeters,
+        progressMeters: todaySession.progressMeters,
+        progressPercent: todaySession.progressPercent,
+        storyId: 2,
+      });
+      return;
+    }
+
+    if (path === "/api/sessions/v1/77/finish" && method === "POST") {
+      todaySession.status = "abandoned";
+      todaySession.endedAt = "2026-06-14T04:12:00Z";
+      todaySession.durationSeconds = 720;
+      todaySession.ticketsEarned = 2;
+      ticketBalance += 2;
+      await fulfill(route, {
+        sessionId: 77,
+        status: todaySession.status,
+        distanceMeters: todaySession.distanceMeters,
+        bonusMeters: todaySession.bonusMeters,
+        progressMeters: todaySession.progressMeters,
+        progressPercent: todaySession.progressPercent,
+        durationSeconds: todaySession.durationSeconds,
+        ticketsEarned: todaySession.ticketsEarned,
+        stampsEarned: todaySession.stampsEarned,
+        couponExchangeAvailable: ticketBalance >= 3,
+      });
+      return;
+    }
+
+    if (path === "/api/stories/v1/friends" && method === "GET") {
+      await fulfill(route, friendStories);
+      return;
+    }
+
     await fulfill(route, null);
   });
 };
@@ -343,8 +536,10 @@ test("guest can preview journey and map without login", async ({ page }) => {
   await mockApi(page);
   await page.goto("/");
 
-  await expect(page.getByText("오늘의 작은 여행을 시작하세요")).toBeVisible();
-  await expect(page.getByText("내 여권으로 이어서 여행하기")).toBeVisible();
+  await expect(page.getByText("오늘 1km를 작은 여행으로 바꾸세요")).toBeVisible();
+  await expect(page.getByText("오늘의 산책 시작하기")).toBeVisible();
+  await expect(page.getByText("오늘 가능한 미션 5개")).toBeVisible();
+  await expect(page.getByText("내 여권으로 오늘 산책 시작하기")).toBeVisible();
 
   await page.getByRole("button", { name: "여권지도" }).click();
   await expect(page.getByText("다음 여권 페이지")).toBeVisible();
@@ -357,6 +552,32 @@ test("protected pages redirect to login with redirect query", async ({ page }) =
 
   await expect(page).toHaveURL(/\/login\?redirect=%2Fprofile/);
   await expect(page.getByRole("heading", { name: "걸어서 세계속으로" })).toBeVisible();
+});
+
+test("daily session starts with GPS, completes a mission, and awards partial results", async ({ page, context }) => {
+  await authenticate(page);
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ latitude: 37.5665, longitude: 126.978 });
+  await mockApi(page);
+  await page.goto("/");
+
+  await expect(page.getByText("오늘 1km를 작은 여행으로 바꾸세요")).toBeVisible();
+  const popupPromise = page.waitForEvent("popup", { timeout: 3000 }).catch(() => null);
+  await page.getByRole("button", { name: "오늘의 산책 시작하기" }).click();
+  const popup = await popupPromise;
+  await popup?.close();
+
+  await expect(page.getByRole("button", { name: "산책 종료하고 결과 보기" })).toBeVisible();
+  await expect(page.getByText(/GPS 기록 중|GPS 연결됨/)).toBeVisible();
+
+  await page.getByRole("button", { name: "세션 기록으로 인증하기" }).click();
+  await expect(page.getByText("1/5개 완료")).toBeVisible();
+  await expect(page.getByText("인증 완료 · 꾸준함 스탬프")).toBeVisible();
+
+  await page.getByRole("button", { name: "산책 종료하고 결과 보기" }).click();
+  await expect(page.getByText("오늘의 결과")).toBeVisible();
+  await expect(page.getByText("중간에 멈춘 여행도 기록됐어요")).toBeVisible();
+  await expect(page.getByText("획득 티켓")).toBeVisible();
 });
 
 test("oauth callback stores tokens and opens the requested protected page", async ({ page }) => {

@@ -21,6 +21,11 @@ public class CurrencyController {
     return ApiResponse.ok(currencyService.getCurrency(userId));
   }
 
+  @PostMapping("/exchange/friend-coupon")
+  public ApiResponse<CurrencyResponse> exchangeFriendCoupon(@CurrentUserId Long userId) {
+    return ApiResponse.ok(currencyService.exchangeFriendCoupon(userId));
+  }
+
   @GetMapping("/transactions")
   public ApiResponse<List<CurrencyTransactionResponse>> getTransactions(
       @CurrentUserId Long userId,

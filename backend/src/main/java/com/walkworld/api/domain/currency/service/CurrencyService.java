@@ -31,11 +31,63 @@ public class CurrencyService {
     UserCurrency currency =
         currencyRepository
             .findById(userId)
-            .orElse(UserCurrency.builder().userId(userId).coupons(0).hearts(0).build());
+            .orElse(UserCurrency.builder().userId(userId).coupons(0).hearts(0).tickets(0).build());
     return CurrencyResponse.builder()
         .coupons(currency.getCoupons())
         .hearts(currency.getHearts())
+        .tickets(currency.getTickets())
         .build();
+  }
+
+  public CurrencyResponse exchangeFriendCoupon(Long userId) {
+    UserCurrency c = getOrCreateCurrency(userId);
+    int ticketCost = 3;
+    if (c.getTickets() < ticketCost) {
+      throw new CurrencyException(CurrencyErrorCode.INSUFFICIENT_TICKETS);
+    }
+
+    c.setTickets(c.getTickets() - ticketCost);
+    c.setCoupons(c.getCoupons() + 1);
+    currencyRepository.save(c);
+
+    transactionRepository.save(
+        CurrencyTransaction.builder()
+            .userId(userId)
+            .currencyType(CurrencyTransaction.CurrencyType.ticket)
+            .amount(-ticketCost)
+            .reason("친구추가 쿠폰 교환")
+            .build());
+    transactionRepository.save(
+        CurrencyTransaction.builder()
+            .userId(userId)
+            .currencyType(CurrencyTransaction.CurrencyType.coupon)
+            .amount(1)
+            .reason("여행 티켓으로 쿠폰 교환")
+            .build());
+
+    return CurrencyResponse.builder()
+        .coupons(c.getCoupons())
+        .hearts(c.getHearts())
+        .tickets(c.getTickets())
+        .build();
+  }
+
+  public void awardTickets(Long userId, int amount, String reason) {
+    if (amount <= 0) {
+      return;
+    }
+
+    UserCurrency c = getOrCreateCurrency(userId);
+    c.setTickets(c.getTickets() + amount);
+    currencyRepository.save(c);
+
+    transactionRepository.save(
+        CurrencyTransaction.builder()
+            .userId(userId)
+            .currencyType(CurrencyTransaction.CurrencyType.ticket)
+            .amount(amount)
+            .reason(reason)
+            .build());
   }
 
   public void deductCoupon(Long userId, int amount, String reason) {
@@ -76,6 +128,15 @@ public class CurrencyService {
             .amount(-amount)
             .reason(reason)
             .build());
+  }
+
+  private UserCurrency getOrCreateCurrency(Long userId) {
+    return currencyRepository
+        .findById(userId)
+        .orElseGet(
+            () ->
+                currencyRepository.save(
+                    UserCurrency.builder().userId(userId).coupons(0).hearts(0).tickets(0).build()));
   }
 
   @Transactional(readOnly = true)

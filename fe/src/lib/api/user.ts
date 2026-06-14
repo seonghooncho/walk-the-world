@@ -9,6 +9,7 @@ export interface UserProfile {
   currentCityId: string;
   coupons: number;
   hearts: number;
+  tickets: number;
   friendCount: number;
   createdAt: string;
 }
@@ -59,7 +60,9 @@ export const stepsApi = {
 };
 
 export const currencyApi = {
-  getBalance: () => apiFetch<{ coupons: number; hearts: number }>("/api/currency/v1"),
+  getBalance: () => apiFetch<{ coupons: number; hearts: number; tickets: number }>("/api/currency/v1"),
+  exchangeFriendCoupon: () =>
+    apiFetch<{ coupons: number; hearts: number; tickets: number }>("/api/currency/v1/exchange/friend-coupon", { method: "POST" }),
   getTransactions: (params?: { type?: string; cursor?: string; limit?: number }) => {
     const qs = new URLSearchParams();
     if (params?.type) {
