@@ -16,6 +16,8 @@
 | 보호 라우트 | `/profile` 직접 접근 시 `/login?redirect=%2Fprofile` 이동 | Playwright, Vitest | 자동화 |
 | OAuth callback | hash token 저장 후 `/profile` 복귀 | Playwright, Vitest | 자동화 |
 | OAuth failure | query error 수신 시 로그인 화면 복귀 | Vitest | 자동화 |
+| Google 로그인 | Google Identity callback 대체 후 `/api/auth/v1/google` 토큰 저장과 redirect 복귀 | Playwright | 자동화 |
+| Kakao 로그인 | `/api/auth/v1/oauth/kakao/start` redirect 대체 후 callback 토큰 저장과 redirect 복귀 | Playwright | 자동화 |
 | Token refresh | 401 후 refresh 성공 시 원 요청 재시도 | Vitest | 자동화 |
 | Token failure | refresh 실패 시 토큰 삭제 | Vitest | 자동화 |
 | Demo | `/demo` 여정/미션/도시 탭 렌더링 | Playwright | 자동화 |

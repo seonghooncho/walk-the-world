@@ -12,6 +12,39 @@ const authenticate = async (page: Page) => {
   });
 };
 
+const routeGoogleIdentityScript = async (page: Page) => {
+  await page.route(/^https:\/\/accounts\.google\.com\/gsi\/client/, async (route) => {
+    await route.fulfill({
+      contentType: "application/javascript",
+      body: `
+        (() => {
+          let credentialCallback = null;
+          window.google = {
+            accounts: {
+              id: {
+                initialize(config) {
+                  credentialCallback = config.callback;
+                },
+                renderButton(element) {
+                  const button = document.createElement("button");
+                  button.type = "button";
+                  button.textContent = "Google 테스트 로그인";
+                  button.setAttribute("aria-label", "Google 테스트 로그인");
+                  button.style.width = "100%";
+                  button.addEventListener("click", () => {
+                    credentialCallback?.({ credential: "google-test-id-token" });
+                  });
+                  element.appendChild(button);
+                },
+              },
+            },
+          };
+        })();
+      `,
+    });
+  });
+};
+
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.clear();
@@ -59,6 +92,33 @@ const mockApi = async (page: Page, options: { initialFriend?: boolean } = {}) =>
     const url = new URL(request.url());
     const method = request.method();
     const path = url.pathname;
+
+    if (path === "/api/auth/v1/google" && method === "POST") {
+      await fulfill(route, {
+        accessToken: "google-access-token",
+        refreshToken: "google-refresh-token",
+        expiresIn: 3600,
+      });
+      return;
+    }
+
+    if (path === "/api/auth/v1/oauth/kakao/start" && method === "GET") {
+      const redirectPath = url.searchParams.get("redirectPath") ?? "/";
+      const frontendOrigin = url.searchParams.get("frontendOrigin") ?? url.origin;
+      const callbackUrl = new URL("/auth/callback", frontendOrigin);
+      callbackUrl.hash = new URLSearchParams({
+        accessToken: "kakao-access-token",
+        refreshToken: "kakao-refresh-token",
+        redirect: redirectPath,
+      }).toString();
+
+      await route.fulfill({
+        status: 302,
+        headers: { location: callbackUrl.toString() },
+        body: "",
+      });
+      return;
+    }
 
     if (path === "/api/users/v1/me") {
       await fulfill(route, {
@@ -256,6 +316,31 @@ test("oauth callback stores tokens and opens the requested protected page", asyn
   await expect(page.getByRole("heading", { name: "프로필" })).toBeVisible();
   await expect(page.evaluate(() => localStorage.getItem("ww_access_token"))).resolves.toBe("access-token");
   await expect(page.evaluate(() => localStorage.getItem("ww_refresh_token"))).resolves.toBe("refresh-token");
+});
+
+test("google login stores tokens and restores the requested protected page", async ({ page }) => {
+  await routeGoogleIdentityScript(page);
+  await mockApi(page);
+  await page.goto("/login?redirect=/profile");
+
+  await page.getByRole("button", { name: "Google 테스트 로그인" }).click();
+
+  await expect(page).toHaveURL(/\/profile$/);
+  await expect(page.getByText("테스트 여행자")).toBeVisible();
+  await expect(page.evaluate(() => localStorage.getItem("ww_access_token"))).resolves.toBe("google-access-token");
+  await expect(page.evaluate(() => localStorage.getItem("ww_refresh_token"))).resolves.toBe("google-refresh-token");
+});
+
+test("kakao oauth start callback stores tokens and restores the requested protected page", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/login?redirect=/profile");
+
+  await page.getByRole("button", { name: "카카오로 시작하기" }).click();
+
+  await expect(page).toHaveURL(/\/profile$/);
+  await expect(page.getByText("테스트 여행자")).toBeVisible();
+  await expect(page.evaluate(() => localStorage.getItem("ww_access_token"))).resolves.toBe("kakao-access-token");
+  await expect(page.evaluate(() => localStorage.getItem("ww_refresh_token"))).resolves.toBe("kakao-refresh-token");
 });
 
 test("city member can be added as a friend and turns into a message action", async ({ page }) => {
