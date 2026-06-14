@@ -1,11 +1,12 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { chatApi, friendsApi, isAuthenticated, postsApi } from "@/lib/api";
+import { chatApi, friendsApi, isAuthenticated, postsApi, type ChatMessageData, type ChatRoomData, type CommentData } from "@/lib/api";
 
 export function useFriends() {
   return useQuery({
     queryKey: ["friends"],
     queryFn: async () => (await friendsApi.list()).data,
     staleTime: 30_000,
+    enabled: isAuthenticated(),
   });
 }
 
@@ -40,6 +41,12 @@ export function useEnsureChatRoom() {
   return useMutation({
     mutationFn: async (friendId: number) => (await chatApi.getOrCreateRoom(friendId)).data,
     onSuccess: (room) => {
+      queryClient.setQueryData<ChatRoomData[]>(["chatRooms"], (rooms = []) => {
+        if (rooms.some((candidate) => candidate.id === room.id)) {
+          return rooms.map((candidate) => (candidate.id === room.id ? room : candidate));
+        }
+        return [room, ...rooms];
+      });
       queryClient.invalidateQueries({ queryKey: ["chatRooms"] });
       queryClient.invalidateQueries({ queryKey: ["chatMessages", room.id] });
     },
@@ -77,7 +84,26 @@ export function useSendMessage() {
   return useMutation({
     mutationFn: async ({ roomId, content }: { roomId: number; content: string }) =>
       (await chatApi.sendMessage(roomId, content)).data,
-    onSuccess: (_, variables) => {
+    onSuccess: (message, variables) => {
+      queryClient.setQueryData<{ pages: Array<{ data: ChatMessageData[]; nextCursor?: string }>; pageParams: unknown[] }>(
+        ["chatMessages", variables.roomId],
+        (existing) => {
+          if (!existing) {
+            return {
+              pages: [{ data: [message], nextCursor: undefined }],
+              pageParams: [undefined],
+            };
+          }
+
+          if (existing.pages.some((page) => page.data.some((candidate) => candidate.id === message.id))) {
+            return existing;
+          }
+
+          const pages = existing.pages.length > 0 ? [...existing.pages] : [{ data: [], nextCursor: undefined }];
+          pages[0] = { ...pages[0], data: [...pages[0].data, message] };
+          return { ...existing, pages };
+        },
+      );
       queryClient.invalidateQueries({ queryKey: ["chatMessages", variables.roomId] });
       queryClient.invalidateQueries({ queryKey: ["chatRooms"] });
     },
@@ -101,7 +127,7 @@ export function usePostComments(postId: number) {
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
-    enabled: Number.isFinite(postId) && postId > 0,
+    enabled: isAuthenticated() && Number.isFinite(postId) && postId > 0,
   });
 }
 
@@ -118,7 +144,7 @@ export function usePosts(params?: { cityId?: string; filter?: string }) {
   });
 }
 
-export function useMyPosts() {
+export function useMyPosts(options: { enabled?: boolean } = {}) {
   return useInfiniteQuery({
     queryKey: ["myPosts"],
     queryFn: async ({ pageParam }) => {
@@ -127,7 +153,7 @@ export function useMyPosts() {
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
-    enabled: isAuthenticated(),
+    enabled: (options.enabled ?? true) && isAuthenticated(),
   });
 }
 
@@ -164,7 +190,26 @@ export function useAddComment() {
   return useMutation({
     mutationFn: async ({ postId, content }: { postId: number; content: string }) =>
       (await postsApi.addComment(postId, content)).data,
-    onSuccess: (_, variables) => {
+    onSuccess: (comment, variables) => {
+      queryClient.setQueryData<{ pages: Array<{ data: CommentData[]; nextCursor?: string }>; pageParams: unknown[] }>(
+        ["postComments", variables.postId],
+        (existing) => {
+          if (!existing) {
+            return {
+              pages: [{ data: [comment], nextCursor: undefined }],
+              pageParams: [undefined],
+            };
+          }
+
+          if (existing.pages.some((page) => page.data.some((candidate) => candidate.id === comment.id))) {
+            return existing;
+          }
+
+          const pages = existing.pages.length > 0 ? [...existing.pages] : [{ data: [], nextCursor: undefined }];
+          pages[0] = { ...pages[0], data: [...pages[0].data, comment] };
+          return { ...existing, pages };
+        },
+      );
       queryClient.invalidateQueries({ queryKey: ["posts"] });
       queryClient.invalidateQueries({ queryKey: ["myPosts"] });
       queryClient.invalidateQueries({ queryKey: ["post", variables.postId] });

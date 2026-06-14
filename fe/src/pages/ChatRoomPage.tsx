@@ -8,6 +8,7 @@ import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChatMessages, useChatRooms, useMarkChatAsRead, usePublicProfile, useSendMessage } from "@/hooks/useApi";
 import { groupMessagesByDate, toUiChatMessage, toUiProfile } from "@/lib/city-utils";
+import { toast } from "sonner";
 
 const ChatRoomPage = () => {
   const { chatId } = useParams<{ chatId: string }>();
@@ -55,15 +56,15 @@ const ChatRoomPage = () => {
 
   const handleSend = async () => {
     const text = input.trim();
-    if (!text || !roomId) {
+    if (!text || !roomId || sendMessage.isPending) {
       return;
     }
 
     try {
       await sendMessage.mutateAsync({ roomId, content: text });
       setInput("");
-    } catch {
-      // Query invalidation will refresh the room state; surface errors elsewhere.
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "메시지를 보내지 못했습니다");
     }
   };
 
@@ -208,9 +209,11 @@ const ChatRoomPage = () => {
             className="flex-1 rounded-xl bg-muted px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none"
           />
           <button
+            type="button"
             onClick={() => void handleSend()}
             disabled={!input.trim() || sendMessage.isPending}
             className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-opacity disabled:opacity-40"
+            aria-label="메시지 보내기"
           >
             <Send className="h-4.5 w-4.5" />
           </button>
