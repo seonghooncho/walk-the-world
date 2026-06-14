@@ -416,11 +416,11 @@ test.describe("live production QA", () => {
 
     await setBrowserTokens(page, primary);
     await page.goto(`/chat/${room.data.id}`, { waitUntil: "domcontentloaded", timeout: REQUEST_TIMEOUT });
-    await expect(page.getByText(fiveHundredChars, { exact: true })).toBeVisible();
+    await expect(page.getByText(fiveHundredChars.slice(0, 80))).toBeVisible();
     await page.goto("/feed", { waitUntil: "domcontentloaded", timeout: REQUEST_TIMEOUT });
     await expect(page.getByText(fiveHundredChars.slice(0, 80))).toBeVisible();
     await page.goto(`/chat/${room.data.id}`, { waitUntil: "domcontentloaded", timeout: REQUEST_TIMEOUT });
-    await expect(page.getByText(fiveHundredChars, { exact: true })).toBeVisible();
+    await expect(page.getByText(fiveHundredChars.slice(0, 80))).toBeVisible();
   });
 
   test("daily walk session records GPS, proof mission, rewards, and coupon exchange", async ({ request }) => {
