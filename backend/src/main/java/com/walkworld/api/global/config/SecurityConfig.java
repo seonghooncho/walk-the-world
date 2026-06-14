@@ -1,6 +1,9 @@
 package com.walkworld.api.global.config;
 
+import com.walkworld.api.domain.auth.error.AuthErrorCode;
 import com.walkworld.api.domain.auth.jwt.JwtAuthenticationFilter;
+import com.walkworld.api.global.error.GeneralErrorCode;
+import com.walkworld.api.global.security.ApiSecurityErrorWriter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,6 +27,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtFilter;
     private final CorsConfigurationSource corsConfigurationSource;
+    private final ApiSecurityErrorWriter apiSecurityErrorWriter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -37,6 +41,12 @@ public class SecurityConfig {
                 .requestMatchers("/add-friend/**").permitAll()
                 .requestMatchers("/health", "/api/health").permitAll()
                 .anyRequest().authenticated()
+            )
+            .exceptionHandling(exception -> exception
+                .authenticationEntryPoint((request, response, authException) ->
+                    apiSecurityErrorWriter.write(response, AuthErrorCode.UNAUTHORIZED))
+                .accessDeniedHandler((request, response, accessDeniedException) ->
+                    apiSecurityErrorWriter.write(response, GeneralErrorCode.FORBIDDEN))
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
