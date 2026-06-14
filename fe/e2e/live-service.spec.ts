@@ -389,7 +389,7 @@ test.describe("live production QA", () => {
         timeout: REQUEST_TIMEOUT,
       }),
       401,
-      "TOKEN_EXPIRED",
+      "UNAUTHORIZED",
       "old token after withdrawal",
     );
 
