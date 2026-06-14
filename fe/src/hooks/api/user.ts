@@ -1,13 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { currencyApi, isAuthenticated, stepsApi, userApi } from "@/lib/api";
 
-export function useMe() {
+export function useMe(options: { enabled?: boolean } = {}) {
+  const enabled = options.enabled ?? isAuthenticated();
+
   return useQuery({
     queryKey: ["me"],
     queryFn: async () => (await userApi.getMe()).data,
     retry: false,
     staleTime: 30_000,
-    enabled: isAuthenticated(),
+    enabled,
   });
 }
 

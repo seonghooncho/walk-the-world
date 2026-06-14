@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useLogin, useSignup } from "@/hooks/useApi";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -13,6 +13,7 @@ type Mode = "login" | "signup";
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isLoggedIn, onLoginSuccess } = useAuth();
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
@@ -28,11 +29,23 @@ const LoginPage = () => {
     return error instanceof Error ? error.message : "오류가 발생했습니다";
   };
 
+  const redirectPath = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const redirect = params.get("redirect");
+    if (!redirect || !redirect.startsWith("/") || redirect.startsWith("//")) {
+      return "/";
+    }
+    if (redirect.startsWith("/login") || redirect.startsWith("/auth/callback")) {
+      return "/";
+    }
+    return redirect;
+  }, [location.search]);
+
   useEffect(() => {
     if (isLoggedIn) {
-      navigate("/", { replace: true });
+      navigate(redirectPath, { replace: true });
     }
-  }, [isLoggedIn, navigate]);
+  }, [isLoggedIn, navigate, redirectPath]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +67,7 @@ const LoginPage = () => {
       }
       toast.success(mode === "login" ? "로그인 성공!" : "회원가입 완료!");
       onLoginSuccess();
-      navigate("/");
+      navigate(redirectPath, { replace: true });
     } catch (error: unknown) {
       toast.error(getErrorMessage(error));
     }

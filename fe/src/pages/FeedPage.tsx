@@ -1,10 +1,12 @@
 import { useEffect } from "react";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search } from "lucide-react";
+import { MessageCircle, Search, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
+import PageHeader from "@/components/layout/PageHeader";
 import UserAvatar from "@/components/shared/UserAvatar";
+import EmptyState from "@/components/shared/EmptyState";
 import { useChatRooms } from "@/hooks/useApi";
 import { useAuth } from "@/contexts/AuthContext";
 import type { ChatRoomData } from "@/lib/api";
@@ -63,15 +65,10 @@ const FeedPage = () => {
 
   return (
     <AppLayout>
-      <div className="px-4 pb-3 pt-12">
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="text-xl font-bold text-foreground">채팅</h1>
-          <p className="text-[11px] text-muted-foreground mt-0.5">친구들과 대화를 나눠보세요</p>
-        </motion.div>
-      </div>
+      <PageHeader title="채팅" subtitle="도시에서 만난 친구들과 이어지는 대화" />
 
       {/* Search */}
-      <div className="px-4 pb-3">
+      <div className="px-4 py-3">
         <div className="flex items-center gap-2 rounded-xl bg-secondary px-3 py-2.5">
           <Search className="h-4 w-4 text-muted-foreground" />
           <input
@@ -128,14 +125,23 @@ const FeedPage = () => {
             </motion.button>
           ))
         ) : (
-          <div className="py-20 text-center">
-            <p className="text-[15px] font-medium text-muted-foreground">
-              {search ? "검색 결과가 없어요" : "채팅방이 없어요"}
-            </p>
-            <p className="mt-1 text-[13px] text-muted-foreground">
-              도시 커뮤니티에서 친구를 추가해보세요!
-            </p>
-          </div>
+          <EmptyState
+            icon={search ? Search : MessageCircle}
+            title={search ? "검색 결과가 없어요" : "아직 채팅방이 없어요"}
+            description={search ? "친구 이름을 다시 확인해보세요." : "같은 도시의 여행자를 친구로 추가하면 대화를 시작할 수 있습니다."}
+            action={
+              !search && (
+                <button
+                  type="button"
+                  onClick={() => navigate("/city")}
+                  className="pressable inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-[13px] font-bold text-primary-foreground"
+                >
+                  <Users className="h-4 w-4" />
+                  도시 커뮤니티 보기
+                </button>
+              )
+            }
+          />
         )}
       </div>
     </AppLayout>

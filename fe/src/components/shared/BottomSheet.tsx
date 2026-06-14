@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface BottomSheetProps {
   open: boolean;
@@ -25,7 +26,7 @@ const BottomSheet = ({ open, onClose, title, className = "", children }: BottomS
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/50"
+            className="app-layer-overlay fixed inset-0 bg-black/50"
             onClick={onClose}
           />
 
@@ -35,7 +36,10 @@ const BottomSheet = ({ open, onClose, title, className = "", children }: BottomS
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 300 }}
-            className={`fixed inset-x-0 bottom-0 z-50 flex max-h-[85vh] flex-col rounded-t-2xl bg-card shadow-elevated ${className}`}
+            className={cn(
+              "app-bottom-sheet-root app-bottom-sheet-panel app-layer-modal fixed inset-x-0 flex flex-col rounded-t-2xl bg-card shadow-elevated",
+              className,
+            )}
           >
             {/* Handle */}
             <div className="flex justify-center pt-3 pb-1">

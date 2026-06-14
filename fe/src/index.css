@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,8 +6,8 @@
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 240 10% 10%;
+    --background: 42 24% 97%;
+    --foreground: 222 24% 13%;
 
     --card: 0 0% 100%;
     --card-foreground: 240 10% 10%;
@@ -15,46 +15,61 @@
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 10%;
 
-    --primary: 24 80% 50%;
+    --primary: 184 58% 34%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 6% 95%;
-    --secondary-foreground: 240 10% 20%;
+    --secondary: 210 22% 94%;
+    --secondary-foreground: 222 24% 18%;
 
-    --muted: 240 6% 94%;
-    --muted-foreground: 240 5% 46%;
+    --muted: 214 18% 92%;
+    --muted-foreground: 218 9% 46%;
 
-    --accent: 24 80% 50%;
+    --accent: 12 72% 58%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 6% 92%;
-    --input: 240 6% 92%;
-    --ring: 24 80% 50%;
+    --border: 214 18% 88%;
+    --input: 214 18% 88%;
+    --ring: 184 58% 34%;
 
     --radius: 0.75rem;
 
-    --city-teal: 174 42% 50%;
+    --city-teal: 174 48% 42%;
     --city-teal-foreground: 0 0% 100%;
-    --gold: 40 70% 50%;
+    --gold: 42 84% 52%;
     --gold-foreground: 0 0% 100%;
-    --ocean: 210 55% 52%;
+    --ocean: 207 64% 47%;
     --ocean-foreground: 0 0% 100%;
-    --earth: 25 30% 42%;
+    --earth: 30 31% 41%;
     --earth-foreground: 0 0% 100%;
     --success: 152 45% 48%;
     --success-foreground: 0 0% 100%;
 
-    --gradient-hero: linear-gradient(135deg, hsl(24, 80%, 50%), hsl(16, 65%, 52%));
-    --gradient-ocean: linear-gradient(135deg, hsl(210, 55%, 52%), hsl(174, 42%, 50%));
-    --gradient-earth: linear-gradient(135deg, hsl(25, 30%, 42%), hsl(24, 80%, 50%));
-    --gradient-night: linear-gradient(135deg, hsl(240, 12%, 14%), hsl(250, 16%, 20%));
+    --gradient-hero: linear-gradient(135deg, hsl(184, 58%, 34%), hsl(207, 64%, 47%));
+    --gradient-ocean: linear-gradient(135deg, hsl(207, 64%, 47%), hsl(174, 48%, 42%));
+    --gradient-earth: linear-gradient(135deg, hsl(30, 31%, 41%), hsl(12, 72%, 58%));
+    --gradient-night: linear-gradient(135deg, hsl(222, 24%, 13%), hsl(218, 28%, 22%));
 
     --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.04), 0 1px 2px -1px hsl(0 0% 0% / 0.04);
     --shadow-elevated: 0 4px 16px -2px hsl(0 0% 0% / 0.08), 0 2px 4px -2px hsl(0 0% 0% / 0.04);
     --shadow-glow: 0 0 20px hsl(24 80% 50% / 0.15);
+
+    --app-bottom-nav-height: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+    --app-content-bottom-space: calc(var(--app-bottom-nav-height) + 1rem);
+    --app-floating-bottom-space: calc(var(--app-bottom-nav-height) + 1rem);
+    --app-bottom-sheet-max-height: min(calc(100vh - var(--app-bottom-nav-height) - 1rem), 34rem);
+    --app-layer-content: 0;
+    --app-layer-content-raised: 10;
+    --app-layer-header: 40;
+    --app-layer-floating: 45;
+    --app-layer-navigation: 50;
+    --app-layer-popover: 60;
+    --app-layer-notice: 70;
+    --app-layer-overlay: 80;
+    --app-layer-modal: 90;
+    --app-layer-critical: 100;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -89,17 +104,63 @@
   }
 }
 
+@supports (height: 100svh) {
+  :root {
+    --app-bottom-sheet-max-height: min(calc(100svh - var(--app-bottom-nav-height) - 1rem), 34rem);
+  }
+}
+
 @layer base {
+  html,
+  body,
+  #root {
+    width: 100%;
+    max-width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+  }
+
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
 
   body {
     @apply bg-background text-foreground font-body antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: 0;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display tracking-tight;
+    @apply font-display;
+    letter-spacing: 0;
+  }
+
+  img,
+  video,
+  canvas,
+  svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  input,
+  button,
+  select,
+  textarea {
+    max-width: 100%;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  .font-num {
+    font-family: 'Outfit', 'Noto Sans KR', system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
   }
 }
 
@@ -141,8 +202,77 @@
 
   .glass {
     background: hsl(0 0% 100% / 0.8);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px) saturate(1.35);
+    -webkit-backdrop-filter: blur(20px) saturate(1.35);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .app-content-with-nav {
+    padding-bottom: var(--app-content-bottom-space);
+  }
+
+  .app-bottom-nav {
+    height: var(--app-bottom-nav-height);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
+  }
+
+  .app-floating-action {
+    bottom: var(--app-floating-bottom-space);
+  }
+
+  .app-layer-content {
+    z-index: var(--app-layer-content);
+  }
+
+  .app-layer-content-raised {
+    z-index: var(--app-layer-content-raised);
+  }
+
+  .app-layer-header {
+    z-index: var(--app-layer-header);
+  }
+
+  .app-layer-floating {
+    z-index: var(--app-layer-floating);
+  }
+
+  .app-layer-navigation {
+    z-index: var(--app-layer-navigation);
+  }
+
+  .app-layer-popover {
+    z-index: var(--app-layer-popover);
+  }
+
+  .app-layer-notice {
+    z-index: var(--app-layer-notice);
+  }
+
+  .app-layer-overlay {
+    z-index: var(--app-layer-overlay);
+  }
+
+  .app-layer-modal {
+    z-index: var(--app-layer-modal);
+  }
+
+  .app-layer-critical {
+    z-index: var(--app-layer-critical);
+  }
+
+  .app-bottom-sheet-root {
+    bottom: var(--app-bottom-nav-height);
+  }
+
+  .app-bottom-sheet-panel {
+    max-height: var(--app-bottom-sheet-max-height);
+  }
+
+  .pressable {
+    @apply transition-all duration-150 active:scale-[0.97] active:opacity-90;
   }
 
   /* Hide scrollbar */

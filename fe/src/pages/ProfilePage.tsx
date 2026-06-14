@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Award, ChevronRight, Footprints, Globe, QrCode, ScanLine, Settings, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
+import PageHeader from "@/components/layout/PageHeader";
 import UserAvatar from "@/components/shared/UserAvatar";
 import StepProgressRing from "@/components/shared/StepProgressRing";
 import { SettingsSheet, MyPostsSheet } from "@/components/shared/ProfileSheets";
@@ -77,14 +78,22 @@ const ProfilePage = () => {
 
   return (
     <AppLayout>
-      <div className="border-b border-border bg-card px-4 pb-8 pt-12">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-lg font-bold text-foreground">프로필</h1>
-          <button onClick={() => setShowSettings(true)} className="text-muted-foreground">
+      <PageHeader
+        title="프로필"
+        subtitle="나의 여행 기록과 친구 연결"
+        rightElement={
+          <button
+            type="button"
+            onClick={() => setShowSettings(true)}
+            className="pressable flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
+            aria-label="설정 열기"
+          >
             <Settings className="h-5 w-5" />
           </button>
-        </div>
+        }
+      />
 
+      <div className="border-b border-border bg-card px-4 pb-8 pt-6">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center">
           <StepProgressRing progress={stepInfo ? stepInfo.progressPercent : progress} size={110} strokeWidth={5}>
             <UserAvatar name={user.name} avatar={user.avatarUrl ?? undefined} size="lg" />

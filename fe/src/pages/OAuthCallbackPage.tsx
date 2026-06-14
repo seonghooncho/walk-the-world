@@ -22,20 +22,29 @@ const OAuthCallbackPage = () => {
     }
     handledRef.current = true;
 
-    const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const searchParams = new URLSearchParams(window.location.search);
+    const params = Array.from(hashParams.keys()).length > 0 ? hashParams : searchParams;
     const accessToken = params.get("accessToken");
     const refreshToken = params.get("refreshToken");
     const redirectPath = normalizeRedirect(params.get("redirect"));
+    const error = searchParams.get("error") ?? hashParams.get("error");
+
+    if (error) {
+      toast.error("소셜 로그인 처리에 실패했습니다");
+      navigate(`/login?redirect=${encodeURIComponent(redirectPath)}&error=${encodeURIComponent(error)}`, { replace: true });
+      return;
+    }
 
     if (!accessToken || !refreshToken) {
-      toast.error("소셜 로그인 처리에 실패했습니다");
-      navigate("/login", { replace: true });
+      toast.error("로그인 토큰을 확인하지 못했습니다");
+      navigate(`/login?redirect=${encodeURIComponent(redirectPath)}`, { replace: true });
       return;
     }
 
     setTokens(accessToken, refreshToken);
     onLoginSuccess();
-    toast.success("카카오 로그인 성공!");
+    toast.success("소셜 로그인 성공!");
     navigate(redirectPath, { replace: true });
   }, [navigate, onLoginSuccess]);
 
