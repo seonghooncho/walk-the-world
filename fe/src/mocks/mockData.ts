@@ -1,9 +1,23 @@
+import cityTokyoImg from "@/assets/city-tokyo.jpg";
+import citySeoulImg from "@/assets/city-seoul.jpg";
+import cityParisImg from "@/assets/city-paris.jpg";
+import heroMapImg from "@/assets/hero-map.jpg";
+import spotTokyoTower from "@/assets/spot-tokyo-tower.jpg";
+import spotShibuya from "@/assets/spot-shibuya.jpg";
+import spotAsakusa from "@/assets/spot-asakusa.jpg";
+import foodRamen from "@/assets/food-ramen.jpg";
+import foodTakoyaki from "@/assets/food-takoyaki.jpg";
+
 export interface City {
   id: string;
   name: string;
   country: string;
   countryFlag: string;
   stepsRequired: number; // cumulative steps to reach this city
+  ticketsRequired?: number;
+  stampsRequired?: number;
+  missionsRequired?: number;
+  cityTheme?: string;
   lat: number;
   lng: number;
   image?: string;
@@ -19,6 +33,10 @@ export interface UserProfile {
   totalSteps: number;
   todaySteps?: number;
   streakDays?: number;
+  travelTickets?: number;
+  stampsEarned?: number;
+  sessionsCompleted?: number;
+  visitedCityIds?: string[];
   currentCityId: string;
   friends: string[];
   joinedAt: string;
@@ -30,12 +48,63 @@ export interface Post {
   userName: string;
   userAvatar: string;
   cityId: string;
+  missionId?: string;
+  missionTitle?: string;
+  proofType?: ProofType;
   content: string;
   image?: string;
   likes: number;
   comments: number;
+  stampReactions?: number;
+  postcardReactions?: number;
+  cheerReactions?: number;
   createdAt: string;
   isLiked: boolean;
+}
+
+export type ActivityType = "walk" | "run";
+export type ProofType = "photo" | "text" | "session" | "screenshot" | "social";
+export type SessionStatus = "suggested" | "active" | "completed";
+
+export interface SessionMission {
+  id: string;
+  title: string;
+  proofType: ProofType;
+  optional: boolean;
+}
+
+export interface WalkRunSession {
+  id: string;
+  title: string;
+  subtitle: string;
+  activityType: ActivityType;
+  targetLabel: string;
+  durationMinutes?: number;
+  distanceKm?: number;
+  cityId: string;
+  cityTheme: string;
+  coverImage: string;
+  difficulty: "easy" | "steady" | "challenge";
+  ticketReward: number;
+  stampRewardIds: string[];
+  missions: SessionMission[];
+  fallbackProofs: ProofType[];
+  status: SessionStatus;
+}
+
+export interface PassportProgress {
+  travelTickets: number;
+  stampsEarned: number;
+  sessionsCompleted: number;
+  visitedCityIds: string[];
+  nextCityId: string;
+  nextUnlockLabel: string;
+  representativePhotos: Array<{
+    id: string;
+    cityId: string;
+    missionTitle: string;
+    image: string;
+  }>;
 }
 
 export const cities: City[] = [
@@ -214,6 +283,10 @@ export const currentUser: UserProfile = {
   name: "김여행",
   avatar: "",
   totalSteps: 523847,
+  travelTickets: 8,
+  stampsEarned: 5,
+  sessionsCompleted: 12,
+  visitedCityIds: ["seoul", "busan", "tokyo"],
   currentCityId: "tokyo",
   friends: ["user2", "user3", "user5"],
   joinedAt: "2025-12-01",
@@ -225,6 +298,10 @@ export const cityUsers: UserProfile[] = [
     name: "박모험",
     avatar: "",
     totalSteps: 510000,
+    travelTickets: 7,
+    stampsEarned: 6,
+    sessionsCompleted: 10,
+    visitedCityIds: ["seoul", "busan", "tokyo"],
     currentCityId: "tokyo",
     friends: ["user1"],
     joinedAt: "2025-11-15",
@@ -234,6 +311,10 @@ export const cityUsers: UserProfile[] = [
     name: "이탐험",
     avatar: "",
     totalSteps: 498000,
+    travelTickets: 6,
+    stampsEarned: 4,
+    sessionsCompleted: 8,
+    visitedCityIds: ["seoul", "tokyo"],
     currentCityId: "tokyo",
     friends: ["user1"],
     joinedAt: "2025-10-20",
@@ -243,6 +324,10 @@ export const cityUsers: UserProfile[] = [
     name: "최산책",
     avatar: "",
     totalSteps: 480000,
+    travelTickets: 5,
+    stampsEarned: 3,
+    sessionsCompleted: 7,
+    visitedCityIds: ["seoul", "tokyo"],
     currentCityId: "tokyo",
     friends: [],
     joinedAt: "2026-01-05",
@@ -252,6 +337,10 @@ export const cityUsers: UserProfile[] = [
     name: "정걸음",
     avatar: "",
     totalSteps: 520000,
+    travelTickets: 8,
+    stampsEarned: 5,
+    sessionsCompleted: 11,
+    visitedCityIds: ["seoul", "busan", "tokyo"],
     currentCityId: "tokyo",
     friends: ["user1"],
     joinedAt: "2025-09-10",
@@ -265,9 +354,16 @@ export const posts: Post[] = [
     userName: "박모험",
     userAvatar: "",
     cityId: "tokyo",
-    content: "도쿄에 도착했어요! 시부야 교차로가 정말 대단하네요 🗼",
+    missionId: "t1",
+    missionTitle: "빨간 사인 찾기",
+    proofType: "photo",
+    content: "출근길에 발견한 빨간 표지판. 오늘의 도쿄 테마 산책 완료!",
+    image: spotShibuya,
     likes: 24,
     comments: 5,
+    stampReactions: 12,
+    postcardReactions: 6,
+    cheerReactions: 4,
     createdAt: "2026-03-08T10:30:00",
     isLiked: true,
   },
@@ -277,9 +373,16 @@ export const posts: Post[] = [
     userName: "이탐험",
     userAvatar: "",
     cityId: "tokyo",
-    content: "아사쿠사 센소지 근처 라멘집 진짜 맛있어요! 여기 오시면 꼭 가보세요 🍜",
+    missionId: "t2",
+    missionTitle: "편의점 간식 캡처",
+    proofType: "photo",
+    content: "2km 러닝 끝나고 라멘 컵 하나. 외부 앱 기록이랑 같이 올렸어요.",
+    image: foodRamen,
     likes: 18,
     comments: 3,
+    stampReactions: 9,
+    postcardReactions: 4,
+    cheerReactions: 7,
     createdAt: "2026-03-07T18:00:00",
     isLiked: false,
   },
@@ -289,9 +392,16 @@ export const posts: Post[] = [
     userName: "김여행",
     userAvatar: "",
     cityId: "tokyo",
-    content: "오늘 하루 12,000보 걸었다! 도쿄에서 오사카까지 얼마 안 남았어 💪",
+    missionId: "t3",
+    missionTitle: "2km 라이트 런",
+    proofType: "screenshot",
+    content: "PWA 트래킹이 중간에 꺼져서 러닝 앱 스크린샷으로 인증. 티켓 3장 획득!",
+    image: heroMapImg,
     likes: 31,
     comments: 8,
+    stampReactions: 16,
+    postcardReactions: 5,
+    cheerReactions: 11,
     createdAt: "2026-03-07T20:00:00",
     isLiked: false,
   },
@@ -301,13 +411,99 @@ export const posts: Post[] = [
     userName: "정걸음",
     userAvatar: "",
     cityId: "tokyo",
-    content: "벚꽃 시즌에 도쿄에 오다니 행운이야 🌸 같은 도시에 있는 분들 만나요!",
+    missionId: "t4",
+    missionTitle: "오늘의 하늘 기록",
+    proofType: "text",
+    content: "오늘 하늘은 옅은 회색. 그래도 30분 도시 산책을 끝내니 여행 온 기분이 났어요.",
+    image: spotAsakusa,
     likes: 42,
     comments: 12,
+    stampReactions: 18,
+    postcardReactions: 10,
+    cheerReactions: 8,
     createdAt: "2026-03-06T14:00:00",
     isLiked: true,
   },
 ];
+
+export const suggestedSessions: WalkRunSession[] = [
+  {
+    id: "session-15m-walk",
+    title: "15-minute walk",
+    subtitle: "가볍게 나가 오늘의 첫 여행 티켓을 받기",
+    activityType: "walk",
+    targetLabel: "15분",
+    durationMinutes: 15,
+    cityId: "seoul",
+    cityTheme: "서울 골목 산책",
+    coverImage: citySeoulImg,
+    difficulty: "easy",
+    ticketReward: 2,
+    stampRewardIds: ["First Walk", "Red Sign"],
+    missions: [
+      { id: "s1", title: "빨간 간판 찾기", proofType: "photo", optional: true },
+      { id: "s3", title: "오늘의 골목 한 줄", proofType: "text", optional: true },
+    ],
+    fallbackProofs: ["photo", "text", "session"],
+    status: "suggested",
+  },
+  {
+    id: "session-2k-run",
+    title: "2km light run",
+    subtitle: "정확한 백그라운드 GPS보다 완료 증명이 중요한 러닝",
+    activityType: "run",
+    targetLabel: "2km",
+    distanceKm: 2,
+    cityId: "tokyo",
+    cityTheme: "도쿄 라이트 런",
+    coverImage: cityTokyoImg,
+    difficulty: "steady",
+    ticketReward: 3,
+    stampRewardIds: ["Light Runner", "Backup Proof"],
+    missions: [
+      { id: "t3", title: "2km 라이트 런", proofType: "session", optional: false },
+      { id: "t5", title: "러닝 앱 스크린샷", proofType: "screenshot", optional: true },
+    ],
+    fallbackProofs: ["session", "screenshot", "text"],
+    status: "suggested",
+  },
+  {
+    id: "session-30m-city",
+    title: "30-minute city walk",
+    subtitle: "사진 미션 2개를 골라 도시 스탬프를 채우기",
+    activityType: "walk",
+    targetLabel: "30분",
+    durationMinutes: 30,
+    cityId: "tokyo",
+    cityTheme: "도쿄 시티 프레임",
+    coverImage: spotTokyoTower,
+    difficulty: "challenge",
+    ticketReward: 4,
+    stampRewardIds: ["Tokyo Red", "City Frame"],
+    missions: [
+      { id: "t1", title: "빨간 사인 찾기", proofType: "photo", optional: true },
+      { id: "t7", title: "작은 교차로 프레임", proofType: "photo", optional: true },
+      { id: "t6", title: "같은 미션 피드 보기", proofType: "social", optional: true },
+    ],
+    fallbackProofs: ["photo", "session", "screenshot"],
+    status: "suggested",
+  },
+];
+
+export const passportProgress: PassportProgress = {
+  travelTickets: 8,
+  stampsEarned: 5,
+  sessionsCompleted: 12,
+  visitedCityIds: ["seoul", "busan", "tokyo"],
+  nextCityId: "osaka",
+  nextUnlockLabel: "티켓 2장 + 스탬프 1개 더 모으면 오사카 티켓 오픈",
+  representativePhotos: [
+    { id: "photo-red-sign", cityId: "tokyo", missionTitle: "빨간 사인 찾기", image: spotShibuya },
+    { id: "photo-snack", cityId: "tokyo", missionTitle: "편의점 간식 캡처", image: foodRamen },
+    { id: "photo-seoul", cityId: "seoul", missionTitle: "횡단보도 프레임", image: citySeoulImg },
+    { id: "photo-paris", cityId: "paris", missionTitle: "오늘의 창문", image: cityParisImg },
+  ],
+};
 
 export function getCurrentCity(totalSteps: number): City {
   let current = cities[0];

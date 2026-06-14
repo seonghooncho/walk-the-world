@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Heart, MessageCircle, Share2, Send } from "lucide-react";
+import { ArrowLeft, Heart, MessageCircle, Share2, Send, Stamp } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import UserAvatar from "@/components/shared/UserAvatar";
@@ -42,9 +42,9 @@ const PostDetailPage = () => {
     return (
       <AppLayout>
         <div className="flex flex-col items-center justify-center py-20">
-          <p className="text-lg font-semibold text-muted-foreground">게시물을 찾을 수 없습니다</p>
+          <p className="text-lg font-semibold text-muted-foreground">미션 인증을 찾을 수 없습니다</p>
           <button onClick={() => navigate("/city")} className="mt-4 text-sm font-medium text-primary">
-            도시로 돌아가기
+            미션 피드로 돌아가기
           </button>
         </div>
       </AppLayout>
@@ -79,7 +79,7 @@ const PostDetailPage = () => {
         <button onClick={() => navigate(-1)} className="text-foreground">
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="text-sm font-bold text-foreground">게시물</h1>
+        <h1 className="text-sm font-bold text-foreground">미션 인증</h1>
       </div>
 
       <div className="flex flex-1 flex-col">
@@ -93,6 +93,10 @@ const PostDetailPage = () => {
           </div>
 
           <p className="text-sm leading-relaxed text-card-foreground">{post.content}</p>
+          <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary">
+            <Stamp className="h-3.5 w-3.5" />
+            {post.missionTitle}
+          </div>
 
           {post.imageUrl && (
             <div className="mt-3 overflow-hidden rounded-xl">
@@ -109,7 +113,7 @@ const PostDetailPage = () => {
                   }`}
                 />
               </motion.div>
-              <span className={post.isLiked ? "text-accent" : "text-muted-foreground"}>{post.likes}</span>
+              <span className={post.isLiked ? "text-accent" : "text-muted-foreground"}>{post.stampReactions}</span>
             </button>
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <MessageCircle className="h-4 w-4" />

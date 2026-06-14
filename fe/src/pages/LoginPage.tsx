@@ -88,7 +88,7 @@ const LoginPage = () => {
             <h1 className="text-2xl font-bold leading-tight text-foreground sm:text-3xl">걸어서 세계속으로</h1>
           </div>
           <p className="mt-2 text-sm text-muted-foreground">
-            걸음으로 시간을 잇는 여행을 시작하세요
+            걷기와 러닝을 작은 여행으로 바꾸세요
           </p>
         </div>
 

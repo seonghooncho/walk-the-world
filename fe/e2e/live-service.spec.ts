@@ -186,7 +186,7 @@ test.describe("live production QA", () => {
 
     await setBrowserTokens(page, primary);
     await page.goto("/profile", { waitUntil: "domcontentloaded", timeout: REQUEST_TIMEOUT });
-    await expect(page.getByRole("heading", { name: "프로필" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "여행 여권" })).toBeVisible();
     await expect(page.getByText(primary.name)).toBeVisible();
   });
 
@@ -398,7 +398,7 @@ test.describe("live production QA", () => {
 
     await setBrowserTokens(page, primary);
     await page.goto("/profile", { waitUntil: "domcontentloaded", timeout: REQUEST_TIMEOUT });
-    await expect(page.getByRole("heading", { name: "프로필" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "여행 여권" })).toBeVisible();
     await expect(page.getByText(primary.name)).toBeVisible();
   });
 });

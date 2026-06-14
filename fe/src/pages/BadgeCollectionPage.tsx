@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Award, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronRight, Stamp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
@@ -34,17 +34,17 @@ const BadgeCollectionPage = () => {
           <button onClick={() => navigate(-1)} className="text-foreground">
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <h1 className="text-sm font-bold text-foreground">배지 컬렉션</h1>
+          <h1 className="text-sm font-bold text-foreground">스탬프 컬렉션</h1>
         </div>
       </div>
 
       <div className="bg-gradient-hero px-4 py-6">
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-foreground/20 backdrop-blur-sm">
-            <Award className="h-8 w-8 text-primary-foreground" />
+            <Stamp className="h-8 w-8 text-primary-foreground" />
           </div>
           <p className="mt-3 text-3xl font-bold text-primary-foreground">{totalEarned}</p>
-          <p className="text-sm text-primary-foreground/80">전체 {totalPossible}개 중 {totalEarned}개 획득</p>
+          <p className="text-sm text-primary-foreground/80">전체 {totalPossible}개 중 {totalEarned}개 스탬프 획득</p>
           <div className="mt-3 h-2 w-48 rounded-full bg-primary-foreground/20">
             <motion.div
               initial={{ width: 0 }}
@@ -72,7 +72,9 @@ const BadgeCollectionPage = () => {
                 onClick={() => setSelectedCity(isExpanded ? null : city.id)}
                 className="flex w-full items-center gap-3 rounded-xl bg-card p-3 shadow-card transition-all"
               >
-                <span className="text-xl">{city.countryFlag}</span>
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-extrabold text-primary">
+                  {city.name.slice(0, 1)}
+                </span>
                 <div className="flex-1 text-left">
                   <p className="text-sm font-semibold text-card-foreground">{city.name}</p>
                   <p className="text-xs text-muted-foreground">{earnedCount}/{cityBadges.length}개 획득</p>

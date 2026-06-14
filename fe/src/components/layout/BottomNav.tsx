@@ -1,13 +1,13 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, Map, Users, MessageSquare, User } from "lucide-react";
+import { Camera, Home, MessageSquare, Route, Stamp } from "lucide-react";
 import { motion } from "framer-motion";
 
 const navItems = [
-  { path: "/", icon: Home, label: "홈" },
-  { path: "/map", icon: Map, label: "노선도" },
-  { path: "/city", icon: Users, label: "도시" },
-  { path: "/feed", icon: MessageSquare, label: "채팅" },
-  { path: "/profile", icon: User, label: "프로필" },
+  { path: "/", icon: Home, label: "여행" },
+  { path: "/map", icon: Route, label: "여권지도" },
+  { path: "/city", icon: Camera, label: "인증" },
+  { path: "/feed", icon: MessageSquare, label: "메시지" },
+  { path: "/profile", icon: Stamp, label: "여권" },
 ];
 
 const BottomNav = () => {

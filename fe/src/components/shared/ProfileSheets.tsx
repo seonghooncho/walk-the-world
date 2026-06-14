@@ -108,22 +108,22 @@ export const SettingsSheet = ({
   );
 };
 
-// My posts sheet
+// My mission proofs sheet
 export const MyPostsSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const { data, isLoading } = useMyPosts({ enabled: open });
   const myPosts = (data?.pages ?? []).flatMap((page) => page.data).map(toUiPost);
 
   return (
-    <BottomSheet open={open} onClose={onClose} title={`내 게시물 (${myPosts.length})`}>
+    <BottomSheet open={open} onClose={onClose} title={`내 미션 인증 (${myPosts.length})`}>
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {isLoading ? (
           <div className="py-12 text-center">
-            <p className="text-sm text-muted-foreground">게시물을 불러오는 중입니다</p>
+            <p className="text-sm text-muted-foreground">미션 인증을 불러오는 중입니다</p>
           </div>
         ) : myPosts.length === 0 ? (
           <div className="py-12 text-center">
             <FileText className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">아직 작성한 게시물이 없어요</p>
+            <p className="text-sm text-muted-foreground">아직 올린 미션 인증이 없어요</p>
           </div>
         ) : (
           myPosts.map((post) => <PostCard key={post.id} post={post} />)

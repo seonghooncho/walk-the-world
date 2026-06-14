@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Share2 } from "lucide-react";
+import { Camera, Heart, MessageCircle, PenLine, Send, Share2, Smartphone, Stamp, Timer, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import UserAvatar from "./UserAvatar";
@@ -14,6 +14,16 @@ interface PostCardProps {
 const PostCard = ({ post }: PostCardProps) => {
   const navigate = useNavigate();
   const toggleLike = useToggleLike();
+  const ProofIcon =
+    post.proofType === "photo"
+      ? Camera
+      : post.proofType === "text"
+        ? PenLine
+        : post.proofType === "screenshot"
+          ? Smartphone
+          : post.proofType === "social"
+            ? Users
+            : Timer;
 
   const goToDetail = () => navigate(`/post/${post.id}`);
 
@@ -46,6 +56,25 @@ const PostCard = ({ post }: PostCardProps) => {
         </div>
       </div>
 
+      <div className="mb-3 flex flex-wrap items-center gap-1.5">
+        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary">
+          <Stamp className="h-3 w-3" />
+          {post.missionTitle}
+        </span>
+        <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-1 text-[10px] font-semibold text-secondary-foreground">
+          <ProofIcon className="h-3 w-3" />
+          {post.proofType === "photo"
+            ? "사진 증명"
+            : post.proofType === "text"
+              ? "텍스트 증명"
+              : post.proofType === "screenshot"
+                ? "스크린샷 증명"
+                : post.proofType === "social"
+                  ? "소셜 증명"
+                  : "세션 증명"}
+        </span>
+      </div>
+
       <p className="mb-3 text-sm leading-relaxed text-card-foreground">{post.content}</p>
 
       {post.imageUrl && (
@@ -54,31 +83,41 @@ const PostCard = ({ post }: PostCardProps) => {
         </div>
       )}
 
-      <div className="flex items-center gap-5 border-t border-border pt-3">
+      <div className="flex items-center gap-4 border-t border-border pt-3">
         <button
           onClick={(e) => {
             e.stopPropagation();
             toggleLike.mutate(post.id);
           }}
           disabled={toggleLike.isPending}
-          className="flex items-center gap-1.5 text-[13px]"
+          className="flex items-center gap-1.5 text-[12px]"
         >
-          <Heart
+          <Stamp
             className={`h-4 w-4 transition-colors ${
-              post.isLiked ? "fill-destructive text-destructive" : "text-muted-foreground"
+              post.isLiked ? "fill-primary text-primary" : "text-muted-foreground"
             }`}
           />
-          <span className={post.isLiked ? "text-destructive font-medium" : "text-muted-foreground"}>
-            {post.likes}
+          <span className={post.isLiked ? "font-medium text-primary" : "text-muted-foreground"}>
+            {post.stampReactions}
           </span>
         </button>
+
+        <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
+          <Send className="h-4 w-4" />
+          <span>{post.postcardReactions}</span>
+        </div>
+
+        <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
+          <Heart className="h-4 w-4" />
+          <span>{post.cheerReactions}</span>
+        </div>
 
         <button
           onClick={(e) => {
             e.stopPropagation();
             goToDetail();
           }}
-          className="flex items-center gap-1.5 text-[13px] text-muted-foreground"
+          className="flex items-center gap-1.5 text-[12px] text-muted-foreground"
         >
           <MessageCircle className="h-4 w-4" />
           <span>{post.comments}</span>

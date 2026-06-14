@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { UserPlus, MessageCircle, Heart, PenSquare } from "lucide-react";
+import { UserPlus, MessageCircle, Heart, PenSquare, Stamp, Camera } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import PageHeader from "@/components/layout/PageHeader";
@@ -12,14 +12,22 @@ import ProfileDetailSheet from "@/components/shared/ProfileDetailSheet";
 import EmptyState from "@/components/shared/EmptyState";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChatRooms, useCityMembers, useEnsureChatRoom, usePosts } from "@/hooks/useApi";
-import { findCityById, getStaticCities, sortPostsNewestFirst, toUiPost, toUiProfile, type UiProfile } from "@/lib/city-utils";
+import {
+  findCityById,
+  getStaticCities,
+  mockProofPosts,
+  sortPostsNewestFirst,
+  toUiPost,
+  toUiProfile,
+  type UiProfile,
+} from "@/lib/city-utils";
 import { toast } from "sonner";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 
-type Tab = "members" | "posts";
+type Tab = "proofs" | "members";
 
 const CityPage = () => {
-  const [tab, setTab] = useState<Tab>("posts");
+  const [tab, setTab] = useState<Tab>("proofs");
   const [friendTarget, setFriendTarget] = useState<UiProfile | null>(null);
   const [profileTarget, setProfileTarget] = useState<UiProfile | null>(null);
   const [showCreatePost, setShowCreatePost] = useState(false);
@@ -63,9 +71,10 @@ const CityPage = () => {
     ...(membersData ?? []).map((member) => toUiProfile(member, { currentCityId: city.id })),
   ];
 
-  const cityPosts = sortPostsNewestFirst(
+  const apiCityPosts = sortPostsNewestFirst(
     (postsData?.pages ?? []).flatMap((page) => page.data).map(toUiPost).filter((post) => post.cityId === city.id),
   );
+  const cityPosts = apiCityPosts.length > 0 ? apiCityPosts : mockProofPosts.filter((post) => post.cityId === city.id);
 
   const handleMessageClick = async (friendId: number) => {
     try {
@@ -80,18 +89,20 @@ const CityPage = () => {
 
   return (
     <AppLayout>
-      <PageHeader title={`${city.countryFlag} ${city.name}`} subtitle={`${members.length}명이 이 도시에서 여행 중`} />
+      <PageHeader title={`${city.name} 미션 피드`} subtitle={`${members.length}명이 proof mission을 공유 중`} />
 
       <div className="border-b border-border bg-card px-4 py-4">
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl bg-gradient-ocean p-4 text-white">
-          <p className="text-[11px] font-semibold text-white/70">도시 커뮤니티</p>
-          <h2 className="mt-1 text-lg font-bold">같은 도시의 여행자와 기록을 나눠보세요</h2>
-          <p className="mt-1 text-[12px] leading-5 text-white/75">미션 인증, 맛집 기록, 친구 추가가 이 도시를 기준으로 이어집니다.</p>
+          <p className="text-[11px] font-semibold text-white/70">Mission proof feed</p>
+          <h2 className="mt-1 text-lg font-extrabold">같은 미션을 어떻게 완료했는지 확인하세요</h2>
+          <p className="mt-1 text-[12px] leading-5 text-white/75">
+            사진, 텍스트, 세션 기록, 외부 앱 스크린샷이 도시 스탬프와 여행 반응으로 이어집니다.
+          </p>
         </motion.div>
       </div>
 
       <div className="flex border-b border-border bg-card">
-        {(["members", "posts"] as Tab[]).map((currentTab) => (
+        {(["proofs", "members"] as Tab[]).map((currentTab) => (
           <button
             key={currentTab}
             onClick={() => setTab(currentTab)}
@@ -99,7 +110,7 @@ const CityPage = () => {
               tab === currentTab ? "text-foreground" : "text-muted-foreground"
             }`}
           >
-            {currentTab === "members" ? "멤버" : "게시물"}
+            {currentTab === "members" ? "여행자" : "인증 피드"}
             {tab === currentTab && (
               <motion.div layoutId="city-tab" className="absolute bottom-0 left-1/4 right-1/4 h-0.5 rounded-full bg-primary" />
             )}
@@ -136,7 +147,7 @@ const CityPage = () => {
                       )}
                     </div>
                     <p className="text-[11px] text-muted-foreground">
-                      {(member.totalSteps / 1000).toFixed(0)}K 보 {member.isFriend ? "• 친구" : ""}
+                      스탬프 {Math.max(2, Math.round(member.totalSteps / 120000))}개 · 세션 {Math.max(3, Math.round(member.totalSteps / 70000))}회 {member.isFriend ? "• 친구" : ""}
                     </p>
                   </div>
                   {!isSelf && (
@@ -167,9 +178,9 @@ const CityPage = () => {
             <div className="mt-3 rounded-xl bg-secondary p-3 text-center">
               <div className="flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
                 <Heart className="h-3 w-3 text-destructive" />
-                <span>같은 도시: 쿠폰 1장 | 다른 도시: 하트 2개</span>
+                <span>같은 도시 친구: 여행 티켓 1장 | 다른 도시: 엽서 반응 2개</span>
               </div>
-              <p className="mt-0.5 text-[10px] text-muted-foreground">QR 실친 친추는 무료입니다</p>
+              <p className="mt-0.5 text-[10px] text-muted-foreground">QR 실친 친추는 티켓 없이 연결됩니다</p>
             </div>
           </motion.div>
         ) : (
@@ -185,24 +196,38 @@ const CityPage = () => {
               onClick={() => setShowCreatePost(true)}
               className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-secondary/50 py-3 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-secondary"
             >
-              <PenSquare className="h-4 w-4" />
-              게시물 작성하기
+              <Camera className="h-4 w-4" />
+              미션 인증 올리기
             </motion.button>
+
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: "사진", value: cityPosts.filter((post) => post.proofType === "photo").length },
+                { label: "세션", value: cityPosts.filter((post) => post.proofType === "session" || post.proofType === "screenshot").length },
+                { label: "스탬프", value: cityPosts.reduce((sum, post) => sum + post.stampReactions, 0) },
+              ].map((stat) => (
+                <div key={stat.label} className="rounded-xl bg-card p-3 text-center shadow-card">
+                  <Stamp className="mx-auto mb-1 h-4 w-4 text-primary" />
+                  <p className="font-num text-base font-extrabold text-card-foreground">{stat.value}</p>
+                  <p className="text-[10px] text-muted-foreground">{stat.label}</p>
+                </div>
+              ))}
+            </div>
 
             {cityPosts.length > 0 ? (
               cityPosts.map((post) => <PostCard key={post.id} post={post} />)
             ) : (
               <EmptyState
                 icon={PenSquare}
-                title="아직 도시 기록이 없어요"
-                description="첫 게시물을 남기면 같은 도시의 여행자들이 이곳에서 대화를 시작할 수 있습니다."
+                title="아직 미션 인증이 없어요"
+                description="첫 proof mission을 올리면 같은 도시의 여행자들이 같은 미션을 따라 할 수 있습니다."
                 action={
                   <button
                     type="button"
                     onClick={() => setShowCreatePost(true)}
                     className="pressable rounded-xl bg-primary px-4 py-2.5 text-[13px] font-bold text-primary-foreground"
                   >
-                    첫 게시물 작성
+                    첫 인증 올리기
                   </button>
                 }
               />
@@ -215,7 +240,7 @@ const CityPage = () => {
       {profileTarget && (
         <ProfileDetailSheet
           user={profileTarget}
-          cityLabel={`${city.countryFlag} ${city.name}`}
+          cityLabel={city.name}
           messageRoomId={(roomsData ?? []).find((room) => room.friendId === profileTarget.id)?.id ?? null}
           onMessage={() => {
             void handleMessageClick(profileTarget.id);

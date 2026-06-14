@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Lock, ChevronDown, Target } from "lucide-react";
+import { MapPin, Lock, ChevronDown, Target, Stamp, Ticket } from "lucide-react";
 import type { UiCity, UiMission } from "@/lib/city-utils";
-import { formatSteps } from "@/lib/city-utils";
+import { getCityUnlockLabel } from "@/lib/city-utils";
 import MissionCard from "./MissionCard";
 
 interface CityCardProps {
@@ -52,7 +52,7 @@ const CityCard = ({
             isCurrent ? "" : isUnlocked ? "bg-muted" : "bg-border"
           }`}
         >
-          {isUnlocked ? city.countryFlag : <Lock className="h-4 w-4 text-muted-foreground" />}
+          {isUnlocked ? city.name.slice(0, 1) : <Lock className="h-4 w-4 text-muted-foreground" />}
         </div>
 
         <div className="flex-1 min-w-0">
@@ -80,7 +80,7 @@ const CityCard = ({
                   isCurrent ? "text-primary-foreground/70" : "text-muted-foreground"
                 }`}
               >
-                • 미션 {completed}/{total}
+                • 스탬프 {completed}/{total}
               </span>
             )}
           </div>
@@ -92,7 +92,7 @@ const CityCard = ({
               isCurrent ? "text-primary-foreground/90" : "text-muted-foreground"
             }`}
           >
-            {formatSteps(city.stepsRequired)} 보
+            {isUnlocked ? "오픈" : "잠금"}
           </span>
           {isUnlocked && hasMissions && (
             <ChevronDown
@@ -141,6 +141,17 @@ const CityCard = ({
                 >
                   {completed}/{total}
                 </span>
+              </div>
+
+              <div
+                className={`mb-3 flex flex-wrap items-center gap-2 rounded-xl px-3 py-2 text-[10px] font-semibold ${
+                  isCurrent ? "bg-primary-foreground/10 text-primary-foreground/80" : "bg-secondary text-muted-foreground"
+                }`}
+              >
+                <Ticket className="h-3.5 w-3.5" />
+                <span>{getCityUnlockLabel(city)}</span>
+                <Stamp className="h-3.5 w-3.5" />
+                <span>{city.cityTheme}</span>
               </div>
 
               {/* Mission cards grid */}

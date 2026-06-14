@@ -98,7 +98,9 @@ const AddFriendPage = () => {
               <UserAvatar name={targetUser.name} avatar={targetUser.avatarUrl ?? undefined} size="lg" />
             </motion.div>
             <h2 className="mt-3 text-xl font-bold text-card-foreground">{targetUser.name}</h2>
-            <p className="text-sm text-muted-foreground">{(targetUser.totalSteps / 1000).toFixed(0)}K 보 걸음</p>
+            <p className="text-sm text-muted-foreground">
+              스탬프 {Math.max(2, Math.round(targetUser.totalSteps / 120000))}개 · 세션 {Math.max(3, Math.round(targetUser.totalSteps / 70000))}회
+            </p>
           </div>
 
           <div className="mt-5 flex justify-center">
@@ -122,7 +124,7 @@ const AddFriendPage = () => {
                   onClick={() => navigate("/city")}
                   className="w-full rounded-xl bg-muted py-3 text-sm font-medium text-muted-foreground"
                 >
-                  도시 커뮤니티로 이동
+                  미션 피드로 이동
                 </button>
               </div>
             ) : (

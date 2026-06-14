@@ -34,10 +34,16 @@ export interface PostData {
   userName: string;
   userAvatarUrl: string | null;
   cityId: string;
+  missionId?: string;
+  missionTitle?: string;
+  proofType?: string;
   content: string;
   image: { url: string; key: string } | null;
   likes: number;
   comments: number;
+  stampReactions?: number;
+  postcardReactions?: number;
+  cheerReactions?: number;
   isLiked: boolean;
   createdAt: string;
 }

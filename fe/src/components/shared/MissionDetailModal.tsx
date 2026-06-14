@@ -3,14 +3,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
   Camera,
-  Utensils,
   PenLine,
-  Compass,
   Users,
   Check,
   Sparkles,
   ImagePlus,
   Loader2,
+  Timer,
+  Smartphone,
+  Ticket,
 } from "lucide-react";
 import type { UiMission, UiMissionType } from "@/lib/city-utils";
 import { missionsApi } from "@/lib/api";
@@ -21,11 +22,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 const typeLabels: Record<UiMissionType, { label: string; icon: typeof Camera; action: string }> = {
-  photo: { label: "사진 미션", icon: Camera, action: "사진을 업로드하세요" },
-  food: { label: "음식 미션", icon: Utensils, action: "음식 사진을 인증하세요" },
-  writing: { label: "글쓰기 미션", icon: PenLine, action: "글을 작성하세요" },
-  explore: { label: "탐험 미션", icon: Compass, action: "방문 인증을 해주세요" },
-  social: { label: "소셜 미션", icon: Users, action: "친구를 맺어보세요" },
+  photo: { label: "사진 증명", icon: Camera, action: "사진을 업로드하세요" },
+  text: { label: "텍스트 증명", icon: PenLine, action: "짧은 기록을 남기세요" },
+  session: { label: "세션 증명", icon: Timer, action: "세션 완료를 기록하세요" },
+  screenshot: { label: "스크린샷 증명", icon: Smartphone, action: "외부 앱 기록을 업로드하세요" },
+  social: { label: "소셜 증명", icon: Users, action: "다른 여행자의 인증을 확인하세요" },
 };
 
 interface MissionDetailModalProps {
@@ -51,11 +52,12 @@ const MissionDetailModal = ({ mission, onClose }: MissionDetailModalProps) => {
 
   const config = typeLabels[mission.type];
   const Icon = config.icon;
-  const needsImage = ["photo", "food", "explore"].includes(mission.type);
-  const needsText = mission.type === "writing";
+  const needsImage = mission.proofType === "photo" || mission.proofType === "screenshot";
+  const needsText = mission.proofType === "text";
+  const isSessionProof = mission.proofType === "session";
   const isSocial = mission.type === "social";
   const isAiComposite = mission.aiComposite;
-  const hasFriendForSocialMission = !isSocial || (user?.friendCount ?? 0) > 0;
+  const hasFriendForSocialMission = !isSocial || (user?.friendCount ?? 0) >= 0;
 
   const handleFileChange = (file: File | null) => {
     setSelectedFile(file);
@@ -137,7 +139,7 @@ const MissionDetailModal = ({ mission, onClose }: MissionDetailModalProps) => {
       });
 
       toast.success("미션 완료!", {
-        description: mission.reward ? `${mission.reward}을(를) 획득했어요!` : "축하합니다!",
+        description: `${mission.stampReward} 스탬프${mission.ticketReward > 0 ? `와 티켓 ${mission.ticketReward}장` : ""}을 획득했어요.`,
       });
       onClose();
     } catch (error) {
@@ -199,6 +201,24 @@ const MissionDetailModal = ({ mission, onClose }: MissionDetailModalProps) => {
         <div className="space-y-5 p-5">
           <p className="text-sm leading-relaxed text-muted-foreground">{mission.description}</p>
 
+          <div className="rounded-2xl border border-border bg-background/60 p-4">
+            <div className="flex items-center gap-2">
+              <Icon className="h-4 w-4 text-primary" />
+              <p className="text-sm font-bold text-card-foreground">{mission.verificationLabel}</p>
+            </div>
+            <div className="mt-3 grid grid-cols-1 gap-2">
+              {mission.proofExamples.map((example) => (
+                <div key={example} className="flex items-start gap-2 text-[12px] leading-5 text-muted-foreground">
+                  <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
+                  <span>{example}</span>
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 rounded-xl bg-secondary px-3 py-2 text-[11px] leading-5 text-muted-foreground">
+              PWA에서는 백그라운드 추적이 끊길 수 있어요. 세션 완료, 사진, 텍스트, 외부 앱 스크린샷 중 가능한 증명으로 이어가면 됩니다.
+            </p>
+          </div>
+
           {isAiComposite && (
             <div className="flex items-start gap-3 rounded-xl border border-accent/20 bg-accent/10 p-3">
               <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-accent-foreground" />
@@ -211,15 +231,22 @@ const MissionDetailModal = ({ mission, onClose }: MissionDetailModalProps) => {
             </div>
           )}
 
-          {mission.reward && (
+          <div className="grid grid-cols-2 gap-2.5">
             <div className="flex items-center gap-3 rounded-xl bg-primary/10 p-3">
-              <span className="text-2xl">🏅</span>
+              <span className="text-2xl">🏷️</span>
               <div>
-                <p className="text-xs text-muted-foreground">보상</p>
-                <p className="text-sm font-bold text-primary">{mission.reward}</p>
+                <p className="text-xs text-muted-foreground">스탬프</p>
+                <p className="text-sm font-bold text-primary">{mission.stampReward}</p>
               </div>
             </div>
-          )}
+            <div className="flex items-center gap-3 rounded-xl bg-gold/10 p-3">
+              <Ticket className="h-6 w-6 text-gold" />
+              <div>
+                <p className="text-xs text-muted-foreground">티켓</p>
+                <p className="text-sm font-bold text-gold">{mission.ticketReward}장</p>
+              </div>
+            </div>
+          </div>
 
           {needsImage && (
             <div>
@@ -285,29 +312,41 @@ const MissionDetailModal = ({ mission, onClose }: MissionDetailModalProps) => {
             </div>
           )}
 
+          {isSessionProof && (
+            <div className="rounded-2xl bg-muted/50 p-4">
+              <div className="flex items-center gap-3">
+                <Timer className="h-8 w-8 text-primary" />
+                <div>
+                  <p className="text-sm font-bold text-card-foreground">{mission.sessionHint}</p>
+                  <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
+                    세션 타이머, 수동 입력, 외부 앱 기록 중 하나로 완료할 수 있습니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {isSocial && (
             <div className="rounded-2xl bg-muted/50 p-4 text-center">
               <Users className="mx-auto mb-2 h-8 w-8 text-primary" />
               <p className="text-sm font-medium text-card-foreground">
-                {hasFriendForSocialMission ? "친구 연결 조건을 만족했습니다" : "도시 커뮤니티에서 친구를 맺어보세요"}
+                {hasFriendForSocialMission ? "미션 피드를 둘러볼 준비가 됐습니다" : "미션 피드에서 다른 여행자를 확인해보세요"}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {hasFriendForSocialMission
-                  ? "아래 버튼으로 소셜 미션을 완료할 수 있습니다"
-                  : "친구를 1명 이상 추가하면 이 미션을 완료할 수 있습니다"}
+                  ? "같은 미션 피드에서 다른 여행자의 인증을 보고 여행 반응을 남겨보세요"
+                  : "도시 피드에서 다른 여행자의 인증을 먼저 확인해보세요"}
               </p>
-              {!hasFriendForSocialMission && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    navigate("/city");
-                  }}
-                  className="mt-3 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
-                >
-                  도시 커뮤니티로 이동
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  navigate("/city");
+                }}
+                className="mt-3 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
+              >
+                미션 피드 보기
+              </button>
             </div>
           )}
 
@@ -322,7 +361,7 @@ const MissionDetailModal = ({ mission, onClose }: MissionDetailModalProps) => {
             ) : (
               <>
                 <Check className="h-5 w-5" />
-                {isSocial && !hasFriendForSocialMission ? "친구 추가 후 완료 가능" : isSocial ? "미션 완료하기" : "인증하고 게시하기"}
+                {isSocial ? "소셜 미션 완료" : isSessionProof ? "세션 완료 기록하기" : "인증하고 게시하기"}
               </>
             )}
           </motion.button>
