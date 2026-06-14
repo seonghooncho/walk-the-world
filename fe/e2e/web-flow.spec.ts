@@ -343,12 +343,12 @@ test("guest can preview journey and map without login", async ({ page }) => {
   await mockApi(page);
   await page.goto("/");
 
-  await expect(page.getByText("도쿄 preview")).toBeVisible();
-  await expect(page.getByText("내 걸음으로 이어서 여행하기")).toBeVisible();
+  await expect(page.getByText("오늘의 작은 여행을 시작하세요")).toBeVisible();
+  await expect(page.getByText("내 여권으로 이어서 여행하기")).toBeVisible();
 
-  await page.getByRole("button", { name: "노선도" }).click();
-  await expect(page.getByText("현재 체크포인트")).toBeVisible();
-  await expect(page.getByText(/나의 여행 노선도/)).toBeVisible();
+  await page.getByRole("button", { name: "여권지도" }).click();
+  await expect(page.getByText("다음 여권 페이지")).toBeVisible();
+  await expect(page.getByText(/스탬프를 모아 다음 도시를 여세요/)).toBeVisible();
 });
 
 test("protected pages redirect to login with redirect query", async ({ page }) => {
@@ -365,7 +365,7 @@ test("oauth callback stores tokens and opens the requested protected page", asyn
 
   await expect(page).toHaveURL(/\/profile$/);
   await expect(page.getByText("테스트 여행자")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "프로필" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "여행 여권" })).toBeVisible();
   await expect(page.evaluate(() => localStorage.getItem("ww_access_token"))).resolves.toBe("access-token");
   await expect(page.evaluate(() => localStorage.getItem("ww_refresh_token"))).resolves.toBe("refresh-token");
 });
@@ -400,7 +400,7 @@ test("city member can be added as a friend and turns into a message action", asy
   await mockApi(page);
   await page.goto("/city");
 
-  await page.getByRole("button", { name: "멤버" }).click();
+  await page.getByRole("button", { name: "여행자" }).click();
   await expect(page.getByText("민서")).toBeVisible();
 
   await page.getByRole("button", { name: "친추" }).click();
@@ -472,12 +472,12 @@ test("post and comment inputs enforce the 500 character boundary", async ({ page
   await expect(page.getByText(boundaryText)).toBeVisible();
 
   await page.goto("/city");
-  await page.getByRole("button", { name: "첫 게시물 작성" }).click();
-  const postInput = page.getByPlaceholder("여행 이야기를 공유해보세요...");
+  await page.getByRole("button", { name: "미션 인증 올리기" }).click();
+  const postInput = page.getByPlaceholder("예: 15분 산책 완료. 빨간 간판은 편의점 앞에서 찾았어요.");
   await postInput.fill(`${boundaryText}초과`);
   await expect(postInput).toHaveValue(boundaryText);
-  await page.getByRole("button", { name: "게시", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "새 게시물" })).toBeHidden();
+  await page.getByRole("button", { name: "미션 인증 제출" }).click();
+  await expect(page.getByRole("heading", { name: "미션 인증 올리기" })).toBeHidden();
   await expect(page.locator("p").filter({ hasText: boundaryText }).first()).toBeVisible();
 });
 
@@ -502,7 +502,7 @@ test("account withdrawal clears tokens and grace-period login restores the accou
   await page.getByPlaceholder("비밀번호").fill("Password1");
   await page.locator("form").getByRole("button", { name: "로그인" }).click();
 
-  await expect(page.getByRole("heading", { name: "프로필" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "여행 여권" })).toBeVisible();
   await expect(page.getByText("계정이 복구되었습니다")).toBeVisible();
   await expect(page.evaluate(() => localStorage.getItem("ww_access_token"))).resolves.toBe("restored-access-token");
 });
@@ -512,11 +512,11 @@ test("demo page presents journey, mission, and city preview tabs", async ({ page
   await page.goto("/demo");
 
   await expect(page.getByText("walk2world 데모")).toBeVisible();
-  await expect(page.getByText("현재 preview 도시")).toBeVisible();
+  await expect(page.getByText("추천 walk/run trip")).toBeVisible();
 
   await page.getByRole("button", { name: "미션" }).click();
-  await expect(page.getByText("도쿄 미션")).toBeVisible();
+  await expect(page.getByText("도쿄 proof missions")).toBeVisible();
 
-  await page.getByRole("button", { name: "도시" }).click();
-  await expect(page.getByText("같은 도시에 있는 여행자")).toBeVisible();
+  await page.getByRole("button", { name: "피드" }).click();
+  await expect(page.getByText("미션 인증 피드")).toBeVisible();
 });

@@ -63,11 +63,11 @@ const CreatePostSheet = ({ open, onClose, city }: CreatePostSheetProps) => {
         imageKey,
       });
 
-      toast.success("게시물이 등록되었습니다");
+      toast.success("미션 인증이 등록되었습니다");
       reset();
       onClose();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "게시물 등록에 실패했습니다");
+      toast.error(error instanceof Error ? error.message : "미션 인증 등록에 실패했습니다");
     }
   };
 
@@ -83,14 +83,15 @@ const CreatePostSheet = ({ open, onClose, city }: CreatePostSheetProps) => {
         >
           취소
         </button>
-        <h2 className="text-sm font-bold text-card-foreground">새 게시물</h2>
+        <h2 className="text-sm font-bold text-card-foreground">미션 인증 올리기</h2>
         <button
           onClick={handleSubmit}
           disabled={!content.trim() || createPost.isPending}
+          aria-label="미션 인증 제출"
           className="flex items-center gap-1 rounded-full bg-gradient-hero px-4 py-1.5 text-xs font-semibold text-primary-foreground shadow-glow disabled:opacity-40"
         >
           {createPost.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-          게시
+          인증
         </button>
       </div>
 
@@ -101,16 +102,23 @@ const CreatePostSheet = ({ open, onClose, city }: CreatePostSheetProps) => {
             <p className="text-sm font-semibold text-card-foreground">{user.name}</p>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <MapPin className="h-3 w-3" />
-              <span>{city ? `${city.countryFlag} ${city.name}` : user.currentCityId}</span>
+              <span>{city ? `${city.name} 미션 피드` : user.currentCityId}</span>
             </div>
           </div>
+        </div>
+
+        <div className="mb-3 rounded-2xl bg-secondary px-3 py-2.5">
+          <p className="text-[12px] font-bold text-secondary-foreground">증명 가능한 미션 기록을 올려주세요</p>
+          <p className="mt-0.5 text-[11px] leading-5 text-muted-foreground">
+            사진, 짧은 기록, 세션 완료, 외부 러닝 앱 스크린샷처럼 확인 가능한 내용을 남기면 같은 미션을 한 여행자들이 이어서 볼 수 있어요.
+          </p>
         </div>
 
         <textarea
           value={content}
           onChange={(event) => setContent(event.target.value)}
           maxLength={SOCIAL_TEXT_MAX_LENGTH}
-          placeholder="여행 이야기를 공유해보세요..."
+          placeholder="예: 15분 산책 완료. 빨간 간판은 편의점 앞에서 찾았어요."
           className="min-h-[120px] w-full resize-none bg-transparent text-sm leading-relaxed text-card-foreground placeholder:text-muted-foreground/60 focus:outline-none"
           autoFocus
         />
@@ -129,7 +137,7 @@ const CreatePostSheet = ({ open, onClose, city }: CreatePostSheetProps) => {
             className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
           >
             <ImagePlus className="h-4 w-4" />
-            사진 업로드
+            사진/스크린샷 업로드
           </button>
         </div>
 
@@ -148,7 +156,7 @@ const CreatePostSheet = ({ open, onClose, city }: CreatePostSheetProps) => {
 
       <div className="border-t border-border px-4 py-3">
         <div className="flex items-center gap-4">
-          <span className="text-xs text-muted-foreground">사진은 JPG/PNG 업로드 가능</span>
+          <span className="text-xs text-muted-foreground">사진/스크린샷은 JPG/PNG 업로드 가능</span>
           <div className="flex-1" />
           <span className="text-[10px] text-muted-foreground">{content.length}/{SOCIAL_TEXT_MAX_LENGTH}</span>
         </div>

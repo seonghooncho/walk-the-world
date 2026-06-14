@@ -1,6 +1,19 @@
 import { cityFoodImages, cityLandmarkImages } from "@/mocks/spotImages";
-import { cityMissions, computeCityMissions, type Mission as StaticMission } from "@/mocks/missionData";
-import { cities as staticCities, currentUser as guestPreviewUser, type City as StaticCity } from "@/mocks/mockData";
+import {
+  cityMissions,
+  computeCityMissions,
+  estimateStampCount,
+  estimateTravelTickets,
+  type Mission as StaticMission,
+  type ProofType,
+} from "@/mocks/missionData";
+import {
+  cities as staticCities,
+  currentUser as guestPreviewUser,
+  passportProgress,
+  posts as mockPosts,
+  type City as StaticCity,
+} from "@/mocks/mockData";
 import type {
   BadgeData,
   CityData,
@@ -11,10 +24,11 @@ import type {
   MissionData,
   PostData,
   PublicProfile,
+  StepInfo,
   UserProfile,
 } from "@/lib/api";
 
-export type UiMissionType = "photo" | "food" | "writing" | "explore" | "social";
+export type UiMissionType = ProofType;
 export type UiMissionStatus = "locked" | "available" | "completed";
 
 export interface UiCity {
@@ -23,6 +37,10 @@ export interface UiCity {
   country: string;
   countryFlag: string;
   stepsRequired: number;
+  ticketsRequired: number;
+  stampsRequired: number;
+  missionsRequired: number;
+  cityTheme: string;
   lat: number;
   lng: number;
   description: string;
@@ -36,11 +54,19 @@ export interface UiMission {
   id: string;
   cityId: string;
   type: UiMissionType;
+  proofType: ProofType;
   title: string;
   description: string;
   image: string;
   stepsRequired: number;
+  ticketsRequired: number;
+  stampsRequired: number;
   reward: string | null;
+  stampReward: string;
+  ticketReward: number;
+  sessionHint: string;
+  verificationLabel: string;
+  proofExamples: string[];
   status: UiMissionStatus;
   completedAt: string | null;
   aiComposite: boolean;
@@ -74,6 +100,12 @@ export interface UiPost {
   comments: number;
   isLiked: boolean;
   createdAt: string;
+  missionId: string | null;
+  missionTitle: string;
+  proofType: ProofType;
+  stampReactions: number;
+  postcardReactions: number;
+  cheerReactions: number;
 }
 
 export interface UiComment {
@@ -110,11 +142,35 @@ for (const missions of Object.values(cityMissions)) {
 const fallbackMissionImage = (missionId: string) =>
   missionImageFallback.get(missionId) ?? cityLandmarkImages.seoul?.[0]?.image ?? "";
 
+const cityRequirementDefaults = [
+  { ticketsRequired: 0, stampsRequired: 0, missionsRequired: 0, cityTheme: "첫 여행 준비" },
+  { ticketsRequired: 3, stampsRequired: 1, missionsRequired: 1, cityTheme: "바다빛 산책" },
+  { ticketsRequired: 5, stampsRequired: 2, missionsRequired: 2, cityTheme: "네온 시티 워크" },
+  { ticketsRequired: 8, stampsRequired: 4, missionsRequired: 3, cityTheme: "간식 골목 산책" },
+  { ticketsRequired: 10, stampsRequired: 6, missionsRequired: 4, cityTheme: "스카이라인 산책" },
+  { ticketsRequired: 12, stampsRequired: 7, missionsRequired: 5, cityTheme: "골든 루트" },
+  { ticketsRequired: 14, stampsRequired: 8, missionsRequired: 6, cityTheme: "가든 시티" },
+  { ticketsRequired: 16, stampsRequired: 9, missionsRequired: 7, cityTheme: "컬러 스트리트" },
+  { ticketsRequired: 18, stampsRequired: 10, missionsRequired: 8, cityTheme: "선라이트 루트" },
+  { ticketsRequired: 20, stampsRequired: 11, missionsRequired: 9, cityTheme: "패턴 헌터" },
+  { ticketsRequired: 22, stampsRequired: 12, missionsRequired: 10, cityTheme: "포스트카드 워크" },
+  { ticketsRequired: 24, stampsRequired: 13, missionsRequired: 11, cityTheme: "레인 워크" },
+  { ticketsRequired: 28, stampsRequired: 15, missionsRequired: 12, cityTheme: "업템포 런" },
+  { ticketsRequired: 32, stampsRequired: 17, missionsRequired: 14, cityTheme: "월드 루프" },
+];
+
+const getStaticCityRequirement = (cityId: string) => {
+  const index = Math.max(0, staticCities.findIndex((city) => city.id === cityId));
+  return cityRequirementDefaults[index] ?? cityRequirementDefaults[cityRequirementDefaults.length - 1];
+};
+
 const coerceMissionType = (type: string): UiMissionType => {
-  if (type === "photo" || type === "food" || type === "writing" || type === "explore" || type === "social") {
+  if (type === "photo" || type === "text" || type === "session" || type === "screenshot" || type === "social") {
     return type;
   }
-  return "explore";
+  if (type === "writing") return "text";
+  if (type === "food") return "photo";
+  return "session";
 };
 
 const coerceMissionStatus = (status: string): UiMissionStatus => {
@@ -125,32 +181,62 @@ const coerceMissionStatus = (status: string): UiMissionStatus => {
 };
 
 export const toUiCity = (city: CityLike): UiCity => ({
-  id: city.id,
-  name: city.name,
-  country: city.country,
-  countryFlag: city.countryFlag,
-  stepsRequired: city.stepsRequired,
-  lat: city.lat,
-  lng: city.lng,
-  description: city.description,
-  famousFood: city.famousFood,
-  landmarks: city.landmarks,
-  isUnlocked: "isUnlocked" in city ? city.isUnlocked : undefined,
-  onlineUsers: "onlineUsers" in city ? city.onlineUsers : undefined,
+  ...(() => {
+    const requirement = getStaticCityRequirement(city.id);
+    return {
+      id: city.id,
+      name: city.name,
+      country: city.country,
+      countryFlag: city.countryFlag,
+      stepsRequired: city.stepsRequired,
+      ticketsRequired: "ticketsRequired" in city && city.ticketsRequired !== undefined ? city.ticketsRequired : requirement.ticketsRequired,
+      stampsRequired: "stampsRequired" in city && city.stampsRequired !== undefined ? city.stampsRequired : requirement.stampsRequired,
+      missionsRequired: "missionsRequired" in city && city.missionsRequired !== undefined ? city.missionsRequired : requirement.missionsRequired,
+      cityTheme: "cityTheme" in city && city.cityTheme ? city.cityTheme : requirement.cityTheme,
+      lat: city.lat,
+      lng: city.lng,
+      description: city.description,
+      famousFood: city.famousFood,
+      landmarks: city.landmarks,
+      isUnlocked: "isUnlocked" in city ? city.isUnlocked : undefined,
+      onlineUsers: "onlineUsers" in city ? city.onlineUsers : undefined,
+    };
+  })(),
 });
 
 export const toUiMission = (mission: MissionLike): UiMission => ({
   id: mission.id,
   cityId: mission.cityId,
   type: coerceMissionType(mission.type),
+  proofType: "proofType" in mission && typeof mission.proofType === "string" ? coerceMissionType(mission.proofType) : coerceMissionType(mission.type),
   title: mission.title,
   description: mission.description,
   image: mission.imageUrl ?? mission.image ?? fallbackMissionImage(mission.id),
   stepsRequired: mission.stepsRequired,
+  ticketsRequired:
+    "ticketsRequired" in mission && typeof mission.ticketsRequired === "number"
+      ? mission.ticketsRequired
+      : Math.max(0, Math.floor(mission.stepsRequired / 75_000)),
+  stampsRequired:
+    "stampsRequired" in mission && typeof mission.stampsRequired === "number"
+      ? mission.stampsRequired
+      : Math.max(0, Math.floor(mission.stepsRequired / 150_000)),
   reward: mission.reward ?? null,
+  stampReward: "stampReward" in mission && mission.stampReward ? mission.stampReward : mission.reward ?? "City Stamp",
+  ticketReward: "ticketReward" in mission && typeof mission.ticketReward === "number" ? mission.ticketReward : 1,
+  sessionHint: "sessionHint" in mission && mission.sessionHint ? mission.sessionHint : "walk/run 세션 후 인증",
+  verificationLabel:
+    "verificationLabel" in mission && mission.verificationLabel
+      ? mission.verificationLabel
+      : coerceMissionType(mission.type) === "photo"
+        ? "사진 증명"
+        : coerceMissionType(mission.type) === "text"
+          ? "텍스트 증명"
+          : "세션 증명",
+  proofExamples: "proofExamples" in mission && mission.proofExamples ? mission.proofExamples : ["미션 조건이 보이는 증명", "짧은 기록"],
   status: coerceMissionStatus(mission.status),
   completedAt: mission.completedAt ?? null,
-  aiComposite: mission.aiComposite,
+  aiComposite: Boolean(mission.aiComposite),
   aiPrompt: mission.aiPrompt ?? null,
   emoji: mission.emoji,
 });
@@ -183,12 +269,71 @@ export const buildStaticMissionMap = (
       computeCityMissions(
         city.id,
         totalSteps,
-        totalSteps >= city.stepsRequired,
+        isCityUnlockedByPassport(toUiCity(city), totalSteps, completedSet),
         completedSet,
       ).map((mission) => toUiMission(mission)),
     ]),
   ) as Record<string, UiMission[]>;
 };
+
+export interface PassportSnapshot {
+  travelTickets: number;
+  stampsEarned: number;
+  sessionsCompleted: number;
+  visitedCityIds: string[];
+  completedMissionCount: number;
+  nextCity: UiCity | null;
+  nextUnlockLabel: string;
+}
+
+export const buildPassportSnapshot = (
+  cities: UiCity[],
+  totalSteps: number,
+  completedMissionIds: Iterable<string> = [],
+): PassportSnapshot => {
+  const completedSet = completedMissionIds instanceof Set ? completedMissionIds : new Set(completedMissionIds);
+  const travelTickets = Math.max(passportProgress.travelTickets, estimateTravelTickets(totalSteps));
+  const stampsEarned = Math.max(passportProgress.stampsEarned, estimateStampCount(totalSteps, completedSet.size));
+  const sessionsCompleted = Math.max(passportProgress.sessionsCompleted, Math.floor(travelTickets * 1.4));
+  const completedMissionCount = Math.max(completedSet.size, stampsEarned);
+  const visitedCityIds = cities
+    .filter((city) => isCityUnlockedByPassport(city, totalSteps, completedSet))
+    .map((city) => city.id);
+  const nextCity = cities.find((city) => !visitedCityIds.includes(city.id)) ?? null;
+  const nextUnlockLabel = nextCity
+    ? `티켓 ${Math.max(0, nextCity.ticketsRequired - travelTickets)}장, 스탬프 ${Math.max(0, nextCity.stampsRequired - stampsEarned)}개, 미션 ${Math.max(0, nextCity.missionsRequired - completedMissionCount)}개 더`
+    : "모든 도시 스탬프 여권 완성";
+
+  return {
+    travelTickets,
+    stampsEarned,
+    sessionsCompleted,
+    visitedCityIds,
+    completedMissionCount,
+    nextCity,
+    nextUnlockLabel,
+  };
+};
+
+export const isCityUnlockedByPassport = (
+  city: UiCity,
+  totalSteps: number,
+  completedMissionIds: Iterable<string> = [],
+) => {
+  const completedSet = completedMissionIds instanceof Set ? completedMissionIds : new Set(completedMissionIds);
+  const tickets = Math.max(passportProgress.travelTickets, estimateTravelTickets(totalSteps));
+  const stamps = Math.max(passportProgress.stampsEarned, estimateStampCount(totalSteps, completedSet.size));
+  const completedMissionCount = Math.max(completedSet.size, stamps);
+
+  return (
+    tickets >= city.ticketsRequired &&
+    stamps >= city.stampsRequired &&
+    completedMissionCount >= city.missionsRequired
+  );
+};
+
+export const getCityUnlockLabel = (city: UiCity) =>
+  `티켓 ${city.ticketsRequired}장 · 스탬프 ${city.stampsRequired}개 · 미션 ${city.missionsRequired}개`;
 
 export const buildGuestPreviewStepInfo = (cities: UiCity[]): StepInfo => {
   const currentCity = findCityById(cities, GUEST_PREVIEW_CITY_ID);
@@ -240,7 +385,34 @@ export const toUiPost = (post: PostData): UiPost => ({
   comments: post.comments,
   isLiked: post.isLiked,
   createdAt: post.createdAt,
+  missionId: "missionId" in post && typeof post.missionId === "string" ? post.missionId : null,
+  missionTitle: "missionTitle" in post && typeof post.missionTitle === "string" ? post.missionTitle : "도시 미션 인증",
+  proofType: "proofType" in post && typeof post.proofType === "string" ? coerceMissionType(post.proofType) : post.image ? "photo" : "text",
+  stampReactions: "stampReactions" in post && typeof post.stampReactions === "number" ? post.stampReactions : post.likes,
+  postcardReactions: "postcardReactions" in post && typeof post.postcardReactions === "number" ? post.postcardReactions : Math.floor(post.likes / 2),
+  cheerReactions: "cheerReactions" in post && typeof post.cheerReactions === "number" ? post.cheerReactions : Math.max(0, post.comments),
 });
+
+export const mockProofPosts: UiPost[] = mockPosts.map((post, index) => ({
+  id: Number(post.id.replace(/\D/g, "")) || index + 1,
+  userId: Number(post.userId.replace(/\D/g, "")) || index + 1,
+  userName: post.userName,
+  userAvatarUrl: post.userAvatar || null,
+  cityId: post.cityId,
+  content: post.content,
+  imageUrl: post.image ?? null,
+  imageKey: null,
+  likes: post.likes,
+  comments: post.comments,
+  isLiked: post.isLiked,
+  createdAt: post.createdAt,
+  missionId: post.missionId ?? null,
+  missionTitle: post.missionTitle ?? "도시 미션 인증",
+  proofType: post.proofType ?? "photo",
+  stampReactions: post.stampReactions ?? post.likes,
+  postcardReactions: post.postcardReactions ?? Math.floor(post.likes / 2),
+  cheerReactions: post.cheerReactions ?? post.comments,
+}));
 
 export const toUiComment = (comment: CommentData): UiComment => ({
   id: comment.id,

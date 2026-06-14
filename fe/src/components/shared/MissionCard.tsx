@@ -1,12 +1,12 @@
 import { motion } from "framer-motion";
-import { Camera, Utensils, PenLine, Compass, Users, Lock, Check, ChevronRight, Sparkles } from "lucide-react";
+import { Camera, PenLine, Users, Lock, Check, ChevronRight, Sparkles, Timer, Smartphone } from "lucide-react";
 import type { UiMission, UiMissionType } from "@/lib/city-utils";
 
 const typeConfig: Record<UiMissionType, { icon: typeof Camera; color: string }> = {
   photo: { icon: Camera, color: "bg-ocean text-ocean-foreground" },
-  food: { icon: Utensils, color: "bg-earth text-earth-foreground" },
-  writing: { icon: PenLine, color: "bg-primary text-primary-foreground" },
-  explore: { icon: Compass, color: "bg-secondary text-secondary-foreground" },
+  text: { icon: PenLine, color: "bg-primary text-primary-foreground" },
+  session: { icon: Timer, color: "bg-earth text-earth-foreground" },
+  screenshot: { icon: Smartphone, color: "bg-secondary text-secondary-foreground" },
   social: { icon: Users, color: "bg-city-teal text-city-teal-foreground" },
 };
 
@@ -82,16 +82,20 @@ const MissionCard = ({ mission, index = 0, onClick }: MissionCardProps) => {
 
       {/* Footer */}
       <div className="bg-card px-2.5 py-2">
-        <p className="text-[11px] text-muted-foreground line-clamp-1">{mission.description}</p>
-        <div className="mt-1.5 flex items-center justify-between">
-          {mission.reward && (
-            <span className="text-[10px] font-medium text-primary">
-              🏅 {mission.reward}
-            </span>
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          <span className="rounded-full bg-secondary px-2 py-0.5 text-[9px] font-bold text-secondary-foreground">
+            {mission.verificationLabel}
+          </span>
+          {mission.ticketReward > 0 && (
+            <span className="text-[10px] font-bold text-gold">+{mission.ticketReward} 티켓</span>
           )}
+        </div>
+        <p className="line-clamp-1 text-[11px] text-muted-foreground">{mission.description}</p>
+        <div className="mt-1.5 flex items-center justify-between">
+          <span className="truncate text-[10px] font-medium text-primary">스탬프: {mission.stampReward}</span>
           {!isLocked && !isCompleted && (
             <div className="ml-auto flex items-center gap-0.5 text-[11px] font-medium text-muted-foreground">
-              도전
+              인증
               <ChevronRight className="h-3 w-3" />
             </div>
           )}

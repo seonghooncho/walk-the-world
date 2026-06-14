@@ -128,7 +128,7 @@ const FeedPage = () => {
           <EmptyState
             icon={search ? Search : MessageCircle}
             title={search ? "검색 결과가 없어요" : "아직 채팅방이 없어요"}
-            description={search ? "친구 이름을 다시 확인해보세요." : "같은 도시의 여행자를 친구로 추가하면 대화를 시작할 수 있습니다."}
+            description={search ? "친구 이름을 다시 확인해보세요." : "같은 미션 피드의 여행자를 친구로 추가하면 대화를 시작할 수 있습니다."}
             action={
               !search && (
                 <button
@@ -137,7 +137,7 @@ const FeedPage = () => {
                   className="pressable inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-[13px] font-bold text-primary-foreground"
                 >
                   <Users className="h-4 w-4" />
-                  도시 커뮤니티 보기
+                  미션 피드 보기
                 </button>
               )
             }

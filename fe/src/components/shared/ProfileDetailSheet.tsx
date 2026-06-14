@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
-import { X, MapPin, Footprints, Calendar, UserPlus, MessageCircle } from "lucide-react";
+import { X, MapPin, UserPlus, MessageCircle, Route, Stamp } from "lucide-react";
 import UserAvatar from "./UserAvatar";
-import { formatSteps } from "@/lib/city-utils";
 import type { UiProfile } from "@/lib/city-utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -73,9 +72,9 @@ const ProfileDetailSheet = ({ user: target, cityLabel, messageRoomId, onMessage,
         {/* Stats */}
         <div className="mt-5 mx-6 grid grid-cols-3 gap-3">
           <div className="flex flex-col items-center rounded-xl bg-muted/60 py-3">
-            <Footprints className="h-4 w-4 text-primary mb-1" />
-            <span className="text-sm font-bold text-card-foreground">{formatSteps(target.totalSteps)}</span>
-            <span className="text-[10px] text-muted-foreground">총 걸음</span>
+            <Stamp className="h-4 w-4 text-primary mb-1" />
+            <span className="text-sm font-bold text-card-foreground">{Math.max(2, Math.round(target.totalSteps / 120000))}개</span>
+            <span className="text-[10px] text-muted-foreground">스탬프</span>
           </div>
           <div className="flex flex-col items-center rounded-xl bg-muted/60 py-3">
             <MapPin className="h-4 w-4 text-accent mb-1" />
@@ -83,10 +82,14 @@ const ProfileDetailSheet = ({ user: target, cityLabel, messageRoomId, onMessage,
             <span className="text-[10px] text-muted-foreground">현재 도시</span>
           </div>
           <div className="flex flex-col items-center rounded-xl bg-muted/60 py-3">
-            <Calendar className="h-4 w-4 text-ocean mb-1" />
-            <span className="text-sm font-bold text-card-foreground">{joinLabel}</span>
-            <span className="text-[10px] text-muted-foreground">가입일</span>
+            <Route className="h-4 w-4 text-ocean mb-1" />
+            <span className="text-sm font-bold text-card-foreground">{Math.max(3, Math.round(target.totalSteps / 70000))}회</span>
+            <span className="text-[10px] text-muted-foreground">세션</span>
           </div>
+        </div>
+
+        <div className="mx-6 mt-3 rounded-xl bg-muted/40 px-3 py-2 text-center text-[11px] text-muted-foreground">
+          여권 시작 {joinLabel}
         </div>
 
         {/* Actions */}

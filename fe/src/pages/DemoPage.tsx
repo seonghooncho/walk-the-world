@@ -1,43 +1,38 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, Footprints, LogIn, MapPinned, MessageCircle, Target, Trophy } from "lucide-react";
+import { ArrowLeft, ArrowRight, Camera, LogIn, MessageCircle, Route, Stamp, Ticket } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import MissionCard from "@/components/shared/MissionCard";
-import SpotCarousel from "@/components/shared/SpotCarousel";
-import UserAvatar from "@/components/shared/UserAvatar";
+import PostCard from "@/components/shared/PostCard";
 import {
   buildGuestPreviewStepInfo,
+  buildPassportSnapshot,
   buildStaticMissionMap,
   findCityById,
-  getCityFoodItems,
-  getCityLandmarkItems,
   getStaticCities,
+  mockProofPosts,
 } from "@/lib/city-utils";
-import cityTokyoImg from "@/assets/city-tokyo.jpg";
+import { suggestedSessions } from "@/mocks/mockData";
 
-type DemoTab = "journey" | "missions" | "city";
+type DemoTab = "trip" | "missions" | "feed";
 
 const tabs: Array<{ key: DemoTab; label: string }> = [
-  { key: "journey", label: "여정" },
+  { key: "trip", label: "세션" },
   { key: "missions", label: "미션" },
-  { key: "city", label: "도시" },
-];
-
-const demoMembers = [
-  { name: "민서", steps: "82K", note: "라멘 미션 완료" },
-  { name: "준호", steps: "76K", note: "시부야 인증 대기" },
-  { name: "하린", steps: "69K", note: "도쿄 타워 기록" },
+  { key: "feed", label: "피드" },
 ];
 
 const DemoPage = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<DemoTab>("journey");
+  const [activeTab, setActiveTab] = useState<DemoTab>("trip");
   const cities = useMemo(() => getStaticCities(), []);
   const stepInfo = useMemo(() => buildGuestPreviewStepInfo(cities), [cities]);
   const city = findCityById(cities, stepInfo.currentCityId) ?? cities[0];
   const missions = useMemo(() => buildStaticMissionMap(stepInfo.totalSteps, new Set<string>()), [stepInfo.totalSteps]);
+  const passport = useMemo(() => buildPassportSnapshot(cities, stepInfo.totalSteps, new Set<string>()), [cities, stepInfo.totalSteps]);
   const activeMissions = missions[city.id] ?? [];
+  const primarySession = suggestedSessions[1];
 
   return (
     <AppLayout hideNav>
@@ -81,22 +76,22 @@ const DemoPage = () => {
       </header>
 
       <main className="space-y-5 px-4 py-4">
-        {activeTab === "journey" && (
+        {activeTab === "trip" && (
           <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-            <div className="relative h-52 overflow-hidden rounded-2xl">
-              <img src={cityTokyoImg} alt="도쿄" className="h-full w-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+            <div className="relative h-56 overflow-hidden rounded-2xl">
+              <img src={primarySession.coverImage} alt={primarySession.cityTheme} className="h-full w-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent" />
               <div className="absolute bottom-4 left-4 right-4 text-white">
-                <p className="text-[11px] font-semibold text-white/70">현재 preview 도시</p>
-                <h2 className="mt-1 text-2xl font-extrabold">{city.countryFlag} {city.name}</h2>
-                <p className="mt-1 text-[13px] text-white/75">{stepInfo.nextCityName}까지 {stepInfo.stepsToNextCity.toLocaleString()}보</p>
+                <p className="text-[11px] font-bold text-white/70">추천 walk/run trip</p>
+                <h2 className="mt-1 text-2xl font-extrabold">{primarySession.title}</h2>
+                <p className="mt-1 text-[13px] leading-5 text-white/75">{primarySession.subtitle}</p>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { icon: Footprints, label: "누적", value: `${stepInfo.totalSteps.toLocaleString()}보` },
-                { icon: MapPinned, label: "현재", value: city.name },
-                { icon: Trophy, label: "진행률", value: `${Math.round(stepInfo.progressPercent)}%` },
+                { icon: Ticket, label: "티켓", value: `${passport.travelTickets}장` },
+                { icon: Stamp, label: "스탬프", value: `${passport.stampsEarned}개` },
+                { icon: Route, label: "세션", value: `${passport.sessionsCompleted}회` },
               ].map((item) => (
                 <div key={item.label} className="rounded-2xl bg-card p-3 shadow-card">
                   <item.icon className="mb-2 h-4 w-4 text-primary" />
@@ -107,12 +102,12 @@ const DemoPage = () => {
             </div>
             <button
               type="button"
-              onClick={() => navigate("/map")}
+              onClick={() => navigate("/")}
               className="pressable flex w-full items-center justify-between rounded-2xl bg-card p-4 text-left shadow-card"
             >
               <span>
-                <span className="block text-sm font-bold text-foreground">전체 노선도 보기</span>
-                <span className="text-[12px] text-muted-foreground">서울에서 세계 한 바퀴까지 이어지는 체크포인트</span>
+                <span className="block text-sm font-bold text-foreground">Start trip 루프 보기</span>
+                <span className="text-[12px] text-muted-foreground">세션 시작, proof mission, 스탬프 피드가 한 화면에서 이어집니다</span>
               </span>
               <ArrowRight className="h-5 w-5 text-muted-foreground" />
             </button>
@@ -123,10 +118,10 @@ const DemoPage = () => {
           <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
             <div className="rounded-2xl bg-card p-4 shadow-card">
               <div className="flex items-center gap-2">
-                <Target className="h-5 w-5 text-primary" />
+                <Camera className="h-5 w-5 text-primary" />
                 <div>
-                  <h2 className="text-base font-bold text-foreground">도쿄 미션</h2>
-                  <p className="text-[12px] text-muted-foreground">사진, 맛집, 기록 미션으로 도시 배지를 모읍니다.</p>
+                  <h2 className="text-base font-bold text-foreground">{city.name} proof missions</h2>
+                  <p className="text-[12px] text-muted-foreground">사진, 텍스트, 세션, 스크린샷 증명으로 스탬프를 모읍니다.</p>
                 </div>
               </div>
             </div>
@@ -135,33 +130,18 @@ const DemoPage = () => {
                 <MissionCard key={mission.id} mission={mission} index={index} />
               ))}
             </div>
-            <SpotCarousel title="도쿄 명소" emoji="🏛️" items={getCityLandmarkItems(city)} maxVisible={3} />
-            <SpotCarousel title="도쿄 맛집" emoji="🍜" items={getCityFoodItems(city)} maxVisible={3} />
           </motion.section>
         )}
 
-        {activeTab === "city" && (
+        {activeTab === "feed" && (
           <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
             <div className="rounded-2xl bg-gradient-ocean p-4 text-white">
               <MessageCircle className="mb-3 h-5 w-5" />
-              <h2 className="text-lg font-bold">같은 도시에 있는 여행자</h2>
-              <p className="mt-1 text-[12px] leading-5 text-white/75">미션 인증과 맛집 기록이 도시 커뮤니티로 모입니다.</p>
+              <h2 className="text-lg font-bold">미션 인증 피드</h2>
+              <p className="mt-1 text-[12px] leading-5 text-white/75">같은 미션을 다른 여행자가 어떻게 완료했는지 보고 여행 반응을 남깁니다.</p>
             </div>
-            {demoMembers.map((member) => (
-              <div key={member.name} className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card">
-                <UserAvatar name={member.name} size="md" showOnline />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold text-foreground">{member.name}</p>
-                  <p className="truncate text-[12px] text-muted-foreground">{member.steps} 보 · {member.note}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => navigate(`/login?redirect=${encodeURIComponent("/city")}`)}
-                  className="pressable rounded-xl bg-secondary px-3 py-2 text-[11px] font-bold text-secondary-foreground"
-                >
-                  친구
-                </button>
-              </div>
+            {mockProofPosts.slice(0, 2).map((post) => (
+              <PostCard key={post.id} post={post} />
             ))}
           </motion.section>
         )}
