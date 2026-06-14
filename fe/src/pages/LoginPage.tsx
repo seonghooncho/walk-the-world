@@ -61,11 +61,12 @@ const LoginPage = () => {
 
     try {
       if (mode === "login") {
-        await login.mutateAsync({ email: normalizedEmail, password: normalizedPassword });
+        const result = await login.mutateAsync({ email: normalizedEmail, password: normalizedPassword });
+        toast.success(result.restored ? "계정이 복구되었습니다" : "로그인 성공!");
       } else {
         await signup.mutateAsync({ email: normalizedEmail, password: normalizedPassword, name: normalizedName });
+        toast.success("회원가입 완료!");
       }
-      toast.success(mode === "login" ? "로그인 성공!" : "회원가입 완료!");
       onLoginSuccess();
       navigate(redirectPath, { replace: true });
     } catch (error: unknown) {

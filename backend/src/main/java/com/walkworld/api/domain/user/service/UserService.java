@@ -1,5 +1,6 @@
 package com.walkworld.api.domain.user.service;
 
+import com.walkworld.api.domain.auth.repository.RefreshTokenRepository;
 import com.walkworld.api.domain.currency.repository.UserCurrencyRepository;
 import com.walkworld.api.domain.friend.repository.FriendshipRepository;
 import com.walkworld.api.domain.s3.service.S3Service;
@@ -9,9 +10,11 @@ import com.walkworld.api.domain.user.dto.PublicProfileResponse;
 import com.walkworld.api.domain.user.dto.UpdateProfileRequest;
 import com.walkworld.api.domain.user.dto.UserProfileResponse;
 import com.walkworld.api.domain.user.entity.User;
+import com.walkworld.api.domain.user.entity.UserStatus;
 import com.walkworld.api.domain.user.error.UserErrorCode;
 import com.walkworld.api.domain.user.error.UserException;
 import com.walkworld.api.domain.user.repository.UserRepository;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +28,7 @@ public class UserService {
   private final UserCurrencyRepository currencyRepository;
   private final FriendshipRepository friendshipRepository;
   private final S3Service s3Service;
+  private final RefreshTokenRepository refreshTokenRepository;
 
   public UserProfileResponse getProfile(Long userId) {
     User user =
@@ -60,11 +64,12 @@ public class UserService {
             .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
 
     boolean isFriend = friendshipRepository.existsByUserIdAndFriendId(currentUserId, targetUserId);
+    boolean targetActive = target.isActive();
 
     return PublicProfileResponse.builder()
         .id(target.getId())
-        .name(target.getName())
-        .avatarUrl(s3Service.resolvePublicUrl(target.getAvatarUrl()))
+        .name(targetActive ? target.getName() : "탈퇴한 사용자")
+        .avatarUrl(targetActive ? s3Service.resolvePublicUrl(target.getAvatarUrl()) : null)
         .totalSteps(target.getTotalSteps())
         .currentCityId(target.getCurrentCityId())
         .isFriend(isFriend)
@@ -84,5 +89,21 @@ public class UserService {
     userRepository.save(user);
 
     return AvatarUploadResponse.builder().avatarUrl(avatarUrl).build();
+  }
+
+  @Transactional
+  public void withdrawAccount(Long userId) {
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
+
+    if (!user.isWithdrawn()) {
+      user.setStatus(UserStatus.withdrawn);
+      user.setWithdrawnAt(LocalDateTime.now());
+      userRepository.save(user);
+    }
+
+    refreshTokenRepository.deleteByUserId(userId);
   }
 }

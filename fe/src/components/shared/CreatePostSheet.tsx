@@ -4,6 +4,7 @@ import BottomSheet from "./BottomSheet";
 import UserAvatar from "./UserAvatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCreatePost } from "@/hooks/useApi";
+import { SOCIAL_TEXT_MAX_LENGTH } from "@/lib/input-limits";
 import { uploadImageFile } from "@/lib/upload-file";
 import type { UiCity } from "@/lib/city-utils";
 import { toast } from "sonner";
@@ -108,6 +109,7 @@ const CreatePostSheet = ({ open, onClose, city }: CreatePostSheetProps) => {
         <textarea
           value={content}
           onChange={(event) => setContent(event.target.value)}
+          maxLength={SOCIAL_TEXT_MAX_LENGTH}
           placeholder="여행 이야기를 공유해보세요..."
           className="min-h-[120px] w-full resize-none bg-transparent text-sm leading-relaxed text-card-foreground placeholder:text-muted-foreground/60 focus:outline-none"
           autoFocus
@@ -148,7 +150,7 @@ const CreatePostSheet = ({ open, onClose, city }: CreatePostSheetProps) => {
         <div className="flex items-center gap-4">
           <span className="text-xs text-muted-foreground">사진은 JPG/PNG 업로드 가능</span>
           <div className="flex-1" />
-          <span className="text-[10px] text-muted-foreground">{content.length}/500</span>
+          <span className="text-[10px] text-muted-foreground">{content.length}/{SOCIAL_TEXT_MAX_LENGTH}</span>
         </div>
       </div>
     </BottomSheet>

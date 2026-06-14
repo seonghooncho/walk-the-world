@@ -17,6 +17,7 @@ public enum AuthErrorCode implements BaseErrorCode {
     PASSWORD_MISMATCH(HttpStatus.BAD_REQUEST, "PASSWORD_MISMATCH", "현재 비밀번호가 올바르지 않습니다"),
     KAKAO_AUTH_FAILED(HttpStatus.BAD_REQUEST, "KAKAO_AUTH_FAILED", "카카오 인증에 실패했습니다"),
     GOOGLE_AUTH_FAILED(HttpStatus.BAD_REQUEST, "GOOGLE_AUTH_FAILED", "구글 인증에 실패했습니다"),
+    ACCOUNT_WITHDRAWN_EXPIRED(HttpStatus.GONE, "ACCOUNT_WITHDRAWN_EXPIRED", "탈퇴 유예기간이 지나 계정을 복구할 수 없습니다"),
     SOCIAL_ACCOUNT_NO_PASSWORD(HttpStatus.BAD_REQUEST, "SOCIAL_ACCOUNT_NO_PASSWORD", "소셜 로그인 계정은 비밀번호를 변경할 수 없습니다");
 
     private final HttpStatus httpStatus;

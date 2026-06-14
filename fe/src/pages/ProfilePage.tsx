@@ -11,7 +11,7 @@ import QRCodeModal from "@/components/shared/QRCodeModal";
 import QRScannerModal from "@/components/shared/QRScannerModal";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { useAuth } from "@/contexts/AuthContext";
-import { useLogout, useMe, useStepInfo } from "@/hooks/useApi";
+import { useLogout, useMe, useStepInfo, useWithdrawAccount } from "@/hooks/useApi";
 import { findCityById, getProgressPercent, getStaticCities } from "@/lib/city-utils";
 import { toast } from "sonner";
 
@@ -25,6 +25,7 @@ const ProfilePage = () => {
   const { data: user, isLoading } = useMe();
   const { data: stepInfo } = useStepInfo();
   const logout = useLogout();
+  const withdrawAccount = useWithdrawAccount();
   const cities = useMemo(() => getStaticCities(), []);
   const currentCity = findCityById(cities, user?.currentCityId ?? null);
   const progress = user ? getProgressPercent(cities, user.totalSteps, user.currentCityId) : 50;
@@ -39,6 +40,17 @@ const ProfilePage = () => {
     await logout.mutateAsync();
     toast.success("로그아웃 되었습니다");
     navigate("/login");
+  };
+
+  const handleWithdraw = async () => {
+    try {
+      await withdrawAccount.mutateAsync();
+      toast.success("회원탈퇴가 처리되었습니다");
+      setShowSettings(false);
+      navigate("/login", { replace: true });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "회원탈퇴 처리에 실패했습니다");
+    }
   };
 
   if (!isLoggedIn) {
@@ -163,7 +175,13 @@ const ProfilePage = () => {
         </motion.div>
       </div>
 
-      <SettingsSheet open={showSettings} onClose={() => setShowSettings(false)} onLogout={handleLogout} />
+      <SettingsSheet
+        open={showSettings}
+        onClose={() => setShowSettings(false)}
+        onLogout={handleLogout}
+        onWithdraw={handleWithdraw}
+        isWithdrawing={withdrawAccount.isPending}
+      />
       <MyPostsSheet open={showMyPosts} onClose={() => setShowMyPosts(false)} />
       <QRCodeModal open={showQR} onClose={() => setShowQR(false)} />
       <QRScannerModal open={showScanner} onClose={() => setShowScanner(false)} />

@@ -1,5 +1,5 @@
 export { useGoogleLogin, useKakaoLogin, useLogin, useLogout, useSignup } from "@/hooks/api/auth";
-export { useCurrency, useMe, usePublicProfile, useStepInfo, useSyncSteps, useUpdateProfile } from "@/hooks/api/user";
+export { useCurrency, useMe, usePublicProfile, useStepInfo, useSyncSteps, useUpdateProfile, useWithdrawAccount } from "@/hooks/api/user";
 export {
   useAddComment,
   useAddFriend,

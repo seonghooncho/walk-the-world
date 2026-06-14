@@ -8,6 +8,7 @@ import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChatMessages, useChatRooms, useMarkChatAsRead, usePublicProfile, useSendMessage } from "@/hooks/useApi";
 import { groupMessagesByDate, toUiChatMessage, toUiProfile } from "@/lib/city-utils";
+import { SOCIAL_TEXT_MAX_LENGTH } from "@/lib/input-limits";
 import { toast } from "sonner";
 
 const ChatRoomPage = () => {
@@ -193,6 +194,7 @@ const ChatRoomPage = () => {
             type="text"
             value={input}
             onChange={(event) => setInput(event.target.value)}
+            maxLength={SOCIAL_TEXT_MAX_LENGTH}
             onCompositionStart={() => {
               isComposingRef.current = true;
             }}
@@ -217,6 +219,11 @@ const ChatRoomPage = () => {
           >
             <Send className="h-4.5 w-4.5" />
           </button>
+        </div>
+        <div className="mt-1 flex justify-end">
+          <span className="text-[10px] text-muted-foreground">
+            {input.length}/{SOCIAL_TEXT_MAX_LENGTH}
+          </span>
         </div>
       </div>
 

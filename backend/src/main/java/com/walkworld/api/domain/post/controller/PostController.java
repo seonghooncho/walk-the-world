@@ -24,7 +24,7 @@ public class PostController {
       @RequestParam(required = false, defaultValue = "all") String filter,
       @RequestParam(required = false) String cursor,
       @RequestParam(defaultValue = "20") int limit) {
-    return postService.getPosts(userId, cityId, filter, cursor, Math.min(limit, 100));
+    return postService.getPosts(userId, cityId, filter, cursor, clampLimit(limit));
   }
 
   @PostMapping
@@ -39,7 +39,7 @@ public class PostController {
       @CurrentUserId Long userId,
       @RequestParam(required = false) String cursor,
       @RequestParam(defaultValue = "20") int limit) {
-    return postService.getMyPosts(userId, cursor, Math.min(limit, 100));
+    return postService.getMyPosts(userId, cursor, clampLimit(limit));
   }
 
   @GetMapping("/{postId}")
@@ -58,7 +58,7 @@ public class PostController {
       @PathVariable Long postId,
       @RequestParam(required = false) String cursor,
       @RequestParam(defaultValue = "50") int limit) {
-    return postService.getComments(postId, cursor, Math.min(limit, 100));
+    return postService.getComments(postId, cursor, clampLimit(limit));
   }
 
   @PostMapping("/{postId}/comments")
@@ -81,5 +81,9 @@ public class PostController {
   public ApiResponse<LikeResponse> toggleLike(
       @CurrentUserId Long userId, @PathVariable Long postId) {
     return ApiResponse.ok(postService.toggleLike(userId, postId));
+  }
+
+  private int clampLimit(int limit) {
+    return Math.max(1, Math.min(limit, 100));
   }
 }

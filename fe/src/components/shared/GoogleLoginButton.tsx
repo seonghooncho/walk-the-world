@@ -19,8 +19,8 @@ const GoogleLoginButton = ({ onSuccess }: Props) => {
   const handleCredentialResponse = useCallback(
     async (response: { credential: string }) => {
       try {
-        await googleLogin.mutateAsync(response.credential);
-        toast.success("구글 로그인 성공!");
+        const result = await googleLogin.mutateAsync(response.credential);
+        toast.success(result.restored ? "계정이 복구되었습니다" : "구글 로그인 성공!");
         onSuccess();
       } catch (error: unknown) {
         toast.error(getErrorMessage(error));

@@ -66,6 +66,8 @@ public class ChatService {
   @Transactional(readOnly = true)
   public ApiResponse<List<ChatMessageResponse>> getMessages(
       Long userId, Long roomId, String cursorToken, int limit) {
+    requireRoomParticipant(userId, roomId);
+
     PageRequest pageable = PageRequest.of(0, limit + 1);
     List<ChatMessage> messages;
 
@@ -97,16 +99,14 @@ public class ChatService {
   }
 
   public ChatMessageResponse sendMessage(Long userId, Long roomId, String content) {
-    ChatRoom room =
-        roomRepository
-            .findById(roomId)
-            .orElseThrow(() -> new ChatException(ChatErrorCode.CHAT_ROOM_NOT_FOUND));
+    ChatRoom room = requireRoomParticipant(userId, roomId);
+    String normalizedContent = content.trim();
 
     ChatMessage msg =
-        ChatMessage.builder().roomId(roomId).senderId(userId).content(content).build();
+        ChatMessage.builder().roomId(roomId).senderId(userId).content(normalizedContent).build();
     messageRepository.save(msg);
 
-    room.setLastMessage(content);
+    room.setLastMessage(normalizedContent);
     room.setLastMessageAt(msg.getCreatedAt() != null ? msg.getCreatedAt() : LocalDateTime.now());
     roomRepository.save(room);
 
@@ -114,7 +114,21 @@ public class ChatService {
   }
 
   public void markAsRead(Long userId, Long roomId) {
+    requireRoomParticipant(userId, roomId);
     messageRepository.markAsRead(roomId, userId);
+  }
+
+  private ChatRoom requireRoomParticipant(Long userId, Long roomId) {
+    ChatRoom room =
+        roomRepository
+            .findById(roomId)
+            .orElseThrow(() -> new ChatException(ChatErrorCode.CHAT_ROOM_NOT_FOUND));
+
+    if (!room.getUser1Id().equals(userId) && !room.getUser2Id().equals(userId)) {
+      throw new ChatException(ChatErrorCode.CHAT_FORBIDDEN);
+    }
+
+    return room;
   }
 
   private ChatRoomResponse toRoomResponse(Long userId, ChatRoom room) {
@@ -126,8 +140,9 @@ public class ChatService {
     return ChatRoomResponse.builder()
         .id(room.getId())
         .friendId(friendId)
-        .friendName(friend != null ? friend.getName() : "Unknown")
-        .friendAvatar(friend != null ? s3Service.resolvePublicUrl(friend.getAvatarUrl()) : null)
+        .friendName(friend != null && friend.isActive() ? friend.getName() : "탈퇴한 사용자")
+        .friendAvatar(
+            friend != null && friend.isActive() ? s3Service.resolvePublicUrl(friend.getAvatarUrl()) : null)
         .lastMessage(room.getLastMessage())
         .lastMessageAt(room.getLastMessageAt())
         .unreadCount(unread)

@@ -13,8 +13,8 @@ public class FriendConverter {
             User friend, Friendship friendship, String avatarUrl) {
         return FriendResponse.builder()
                 .id(friend.getId())
-                .name(friend.getName())
-                .avatarUrl(avatarUrl)
+                .name(friend.isActive() ? friend.getName() : "탈퇴한 사용자")
+                .avatarUrl(friend.isActive() ? avatarUrl : null)
                 .totalSteps(friend.getTotalSteps())
                 .currentCityId(friend.getCurrentCityId())
                 .method(friendship.getMethod().name())
@@ -25,8 +25,8 @@ public class FriendConverter {
     public static FriendResponse toFriendResponse(User friend, String method, String avatarUrl) {
         return FriendResponse.builder()
                 .id(friend.getId())
-                .name(friend.getName())
-                .avatarUrl(avatarUrl)
+                .name(friend.isActive() ? friend.getName() : "탈퇴한 사용자")
+                .avatarUrl(friend.isActive() ? avatarUrl : null)
                 .totalSteps(friend.getTotalSteps())
                 .currentCityId(friend.getCurrentCityId())
                 .method(method)

@@ -7,8 +7,10 @@ const apiResponse = (data: unknown) => ({
 
 const authenticate = async (page: Page) => {
   await page.addInitScript(() => {
-    localStorage.setItem("ww_access_token", "access-token");
-    localStorage.setItem("ww_refresh_token", "refresh-token");
+    if (window.name !== "ww_disable_auto_auth") {
+      localStorage.setItem("ww_access_token", "access-token");
+      localStorage.setItem("ww_refresh_token", "refresh-token");
+    }
   });
 };
 
@@ -83,6 +85,19 @@ const mockApi = async (page: Page, options: { initialFriend?: boolean } = {}) =>
     content: string;
     createdAt: string;
   }> = [];
+  const posts: Array<{
+    id: number;
+    userId: number;
+    userName: string;
+    userAvatarUrl: string | null;
+    cityId: string;
+    content: string;
+    image: null;
+    likes: number;
+    comments: number;
+    isLiked: boolean;
+    createdAt: string;
+  }> = [];
 
   const fulfill = (route: Route, data: unknown, meta?: unknown) =>
     route.fulfill({ contentType: "application/json", body: JSON.stringify({ ...apiResponse(data), meta }) });
@@ -92,6 +107,16 @@ const mockApi = async (page: Page, options: { initialFriend?: boolean } = {}) =>
     const url = new URL(request.url());
     const method = request.method();
     const path = url.pathname;
+
+    if (path === "/api/auth/v1/login" && method === "POST") {
+      await fulfill(route, {
+        accessToken: "restored-access-token",
+        refreshToken: "restored-refresh-token",
+        expiresIn: 3600,
+        restored: true,
+      });
+      return;
+    }
 
     if (path === "/api/auth/v1/google" && method === "POST") {
       await fulfill(route, {
@@ -120,7 +145,7 @@ const mockApi = async (page: Page, options: { initialFriend?: boolean } = {}) =>
       return;
     }
 
-    if (path === "/api/users/v1/me") {
+    if (path === "/api/users/v1/me" && method === "GET") {
       await fulfill(route, {
         id: 1,
         email: "demo@walkworld.app",
@@ -133,6 +158,11 @@ const mockApi = async (page: Page, options: { initialFriend?: boolean } = {}) =>
         friendCount: friendAdded ? 1 : 0,
         createdAt: "2026-06-14T00:00:00Z",
       });
+      return;
+    }
+
+    if (path === "/api/users/v1/me" && method === "DELETE") {
+      await fulfill(route, null);
       return;
     }
 
@@ -219,13 +249,15 @@ const mockApi = async (page: Page, options: { initialFriend?: boolean } = {}) =>
     if (path === "/api/chat/v1/rooms/10/messages" && method === "POST") {
       const body = JSON.parse(request.postData() ?? "{}") as { content?: string };
       const message = {
-        id: 101,
+        id: 100 + messages.length,
         senderId: 1,
         content: body.content ?? "",
         read: false,
         createdAt: "2026-06-14T02:00:00Z",
       };
       messages.push(message);
+      chatRooms[0].lastMessage = message.content;
+      chatRooms[0].lastMessageAt = message.createdAt;
       await fulfill(route, message);
       return;
     }
@@ -241,7 +273,27 @@ const mockApi = async (page: Page, options: { initialFriend?: boolean } = {}) =>
     }
 
     if (path === "/api/posts/v1" && method === "GET") {
-      await fulfill(route, []);
+      await fulfill(route, posts);
+      return;
+    }
+
+    if (path === "/api/posts/v1" && method === "POST") {
+      const body = JSON.parse(request.postData() ?? "{}") as { content?: string; cityId?: string };
+      const post = {
+        id: 20 + posts.length,
+        userId: 1,
+        userName: "테스트 여행자",
+        userAvatarUrl: null,
+        cityId: body.cityId ?? "tokyo",
+        content: body.content ?? "",
+        image: null,
+        likes: 0,
+        comments: 0,
+        isLiked: false,
+        createdAt: "2026-06-14T03:00:00Z",
+      };
+      posts.unshift(post);
+      await fulfill(route, post);
       return;
     }
 
@@ -370,6 +422,31 @@ test("chat room sends a message and renders it in the thread", async ({ page }) 
   await expect(page.getByText("좋아요, 같이 가요")).toBeVisible();
 });
 
+test("chat input blocks blank content, accepts 500 characters, and keeps sent message after reentry", async ({ page }) => {
+  await authenticate(page);
+  await mockApi(page, { initialFriend: true });
+  await page.goto("/chat/10");
+
+  const messageInput = page.getByPlaceholder("메시지를 입력하세요...");
+  const sendButton = page.getByRole("button", { name: "메시지 보내기" });
+  const boundaryMessage = "가".repeat(500);
+
+  await messageInput.fill("   ");
+  await expect(sendButton).toBeDisabled();
+
+  await messageInput.fill(`${boundaryMessage}초과`);
+  await expect(messageInput).toHaveValue(boundaryMessage);
+  await sendButton.click();
+
+  await expect(page.getByText(boundaryMessage)).toBeVisible();
+
+  await page.goto("/feed");
+  await expect(page.getByText(boundaryMessage)).toBeVisible();
+
+  await page.goto("/chat/10");
+  await expect(page.getByText(boundaryMessage)).toBeVisible();
+});
+
 test("post detail accepts a new comment", async ({ page }) => {
   await authenticate(page);
   await mockApi(page);
@@ -380,6 +457,54 @@ test("post detail accepts a new comment", async ({ page }) => {
   await page.getByRole("button", { name: "댓글 보내기" }).click();
 
   await expect(page.getByText("저도 가보고 싶어요")).toBeVisible();
+});
+
+test("post and comment inputs enforce the 500 character boundary", async ({ page }) => {
+  await authenticate(page);
+  await mockApi(page);
+  const boundaryText = "나".repeat(500);
+
+  await page.goto("/post/5");
+  const commentInput = page.getByPlaceholder("댓글을 입력하세요...");
+  await commentInput.fill(`${boundaryText}초과`);
+  await expect(commentInput).toHaveValue(boundaryText);
+  await page.getByRole("button", { name: "댓글 보내기" }).click();
+  await expect(page.getByText(boundaryText)).toBeVisible();
+
+  await page.goto("/city");
+  await page.getByRole("button", { name: "첫 게시물 작성" }).click();
+  const postInput = page.getByPlaceholder("여행 이야기를 공유해보세요...");
+  await postInput.fill(`${boundaryText}초과`);
+  await expect(postInput).toHaveValue(boundaryText);
+  await page.getByRole("button", { name: "게시", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "새 게시물" })).toBeHidden();
+  await expect(page.locator("p").filter({ hasText: boundaryText }).first()).toBeVisible();
+});
+
+test("account withdrawal clears tokens and grace-period login restores the account", async ({ page }) => {
+  await authenticate(page);
+  await mockApi(page);
+  await page.goto("/profile");
+  await page.evaluate(() => {
+    window.name = "ww_disable_auto_auth";
+  });
+
+  await page.getByRole("button", { name: "설정 열기" }).click();
+  await page.getByRole("button", { name: "회원탈퇴" }).click();
+  await page.getByRole("button", { name: "탈퇴하기" }).click();
+
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.evaluate(() => localStorage.getItem("ww_access_token"))).resolves.toBeNull();
+  await expect(page.evaluate(() => localStorage.getItem("ww_refresh_token"))).resolves.toBeNull();
+
+  await page.goto("/login?redirect=/profile");
+  await page.getByPlaceholder("이메일").fill("demo@walkworld.app");
+  await page.getByPlaceholder("비밀번호").fill("Password1");
+  await page.locator("form").getByRole("button", { name: "로그인" }).click();
+
+  await expect(page.getByRole("heading", { name: "프로필" })).toBeVisible();
+  await expect(page.getByText("계정이 복구되었습니다")).toBeVisible();
+  await expect(page.evaluate(() => localStorage.getItem("ww_access_token"))).resolves.toBe("restored-access-token");
 });
 
 test("demo page presents journey, mission, and city preview tabs", async ({ page }) => {

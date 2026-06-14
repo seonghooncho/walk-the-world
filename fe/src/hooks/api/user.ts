@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { currencyApi, isAuthenticated, stepsApi, userApi } from "@/lib/api";
+import { clearTokens, currencyApi, isAuthenticated, stepsApi, userApi } from "@/lib/api";
 
 export function useMe(options: { enabled?: boolean } = {}) {
   const enabled = options.enabled ?? isAuthenticated();
@@ -19,6 +19,18 @@ export function useUpdateProfile() {
   return useMutation({
     mutationFn: async (data: { name?: string; avatarUrl?: string }) => (await userApi.updateMe(data)).data,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["me"] }),
+  });
+}
+
+export function useWithdrawAccount() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => (await userApi.withdrawMe()).data,
+    onSettled: () => {
+      clearTokens();
+      queryClient.clear();
+    },
   });
 }
 

@@ -18,6 +18,7 @@ import com.walkworld.api.domain.auth.repository.RefreshTokenRepository;
 import com.walkworld.api.domain.currency.entity.UserCurrency;
 import com.walkworld.api.domain.currency.repository.UserCurrencyRepository;
 import com.walkworld.api.domain.user.entity.User;
+import com.walkworld.api.domain.user.entity.UserStatus;
 import com.walkworld.api.domain.user.repository.UserRepository;
 import com.walkworld.api.global.config.OAuthProperties;
 import java.time.Duration;
@@ -43,6 +44,7 @@ import org.springframework.web.client.RestTemplate;
 @Transactional
 public class AuthService {
 
+  private static final int WITHDRAWAL_GRACE_DAYS = 30;
   private static final String KAKAO_USER_INFO_URL = "https://kapi.kakao.com/v2/user/me";
   private static final String GOOGLE_TOKEN_INFO_URL =
       "https://oauth2.googleapis.com/tokeninfo?id_token=";
@@ -71,7 +73,7 @@ public class AuthService {
     currencyRepository.save(
         UserCurrency.builder().userId(user.getId()).coupons(2).hearts(5).build());
 
-    return generateTokens(user.getId());
+    return generateTokens(user.getId(), false);
   }
 
   public TokenResDTO login(LoginReqDTO request) {
@@ -88,7 +90,8 @@ public class AuthService {
       throw new AuthException(AuthErrorCode.INVALID_CREDENTIALS);
     }
 
-    return generateTokens(user.getId());
+    boolean restored = restoreOrRejectWithdrawnAccount(user);
+    return generateTokens(user.getId(), restored);
   }
 
   public TokenResDTO refresh(RefreshReqDTO request) {
@@ -102,8 +105,18 @@ public class AuthService {
       throw new AuthException(AuthErrorCode.TOKEN_EXPIRED);
     }
 
+    User user =
+        userRepository
+            .findById(stored.getUserId())
+            .orElseThrow(() -> new AuthException(AuthErrorCode.INVALID_TOKEN));
+
+    if (!user.isActive()) {
+      refreshTokenRepository.delete(stored);
+      throw new AuthException(AuthErrorCode.INVALID_TOKEN);
+    }
+
     refreshTokenRepository.delete(stored);
-    return generateTokens(stored.getUserId());
+    return generateTokens(stored.getUserId(), false);
   }
 
   public void logout(RefreshReqDTO request) {
@@ -155,7 +168,8 @@ public class AuthService {
                   return createKakaoUser(kakaoUser);
                 });
 
-    return generateTokens(user.getId());
+    boolean restored = restoreOrRejectWithdrawnAccount(user);
+    return generateTokens(user.getId(), restored);
   }
 
   public TokenResDTO googleLogin(GoogleLoginReqDTO request) {
@@ -179,7 +193,8 @@ public class AuthService {
                   return createGoogleUser(googleUser);
                 });
 
-    return generateTokens(user.getId());
+    boolean restored = restoreOrRejectWithdrawnAccount(user);
+    return generateTokens(user.getId(), restored);
   }
 
   private KakaoUserInfo fetchKakaoUserInfo(String accessToken) {
@@ -331,7 +346,24 @@ public class AuthService {
     return user;
   }
 
-  private TokenResDTO generateTokens(Long userId) {
+  private boolean restoreOrRejectWithdrawnAccount(User user) {
+    if (!user.isWithdrawn()) {
+      return false;
+    }
+
+    LocalDateTime withdrawnAt = user.getWithdrawnAt();
+    if (withdrawnAt != null
+        && withdrawnAt.plusDays(WITHDRAWAL_GRACE_DAYS).isBefore(LocalDateTime.now())) {
+      throw new AuthException(AuthErrorCode.ACCOUNT_WITHDRAWN_EXPIRED);
+    }
+
+    user.setStatus(UserStatus.active);
+    user.setWithdrawnAt(null);
+    userRepository.save(user);
+    return true;
+  }
+
+  private TokenResDTO generateTokens(Long userId, boolean restored) {
     String accessToken = jwtProvider.createAccessToken(userId);
     String refreshToken = jwtProvider.createRefreshToken(userId);
 
@@ -348,6 +380,7 @@ public class AuthService {
         .refreshToken(refreshToken)
         .expiresIn(3600L)
         .tokenType("Bearer")
+        .restored(restored)
         .build();
   }
 }

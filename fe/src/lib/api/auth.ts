@@ -4,6 +4,7 @@ export interface TokenPayload {
   accessToken: string;
   refreshToken: string;
   expiresIn: number;
+  restored?: boolean;
 }
 
 export const authApi = {
