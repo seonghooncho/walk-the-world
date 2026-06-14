@@ -14,6 +14,7 @@
 - [경계 요구사항](product/BOUNDARY_REQUIREMENTS.md): 회원탈퇴 복구, 입력값, 권한, 재진입 경계 기준을 정리한다.
 - [디자인 가이드](design/DESIGN_GUIDE.md): 웹 디자인 토큰, 레이어, safe-area, 공통 컴포넌트 기준을 정리한다.
 - [웹 QA 매트릭스](testing/WEB_QA_MATRIX.md): 주요 시나리오, 자동화 범위, 남은 수동 검증 항목을 추적한다.
+- [실서비스 QA 리포트](testing/LIVE_QA_REPORT.md): 운영 URL 대상 live E2E 결과와 배포 전후 실패/통과 기준을 정리한다.
 - [API 명세](../API_SPEC.md): 프론트와 백엔드가 공유하는 API 계약을 확인한다.
 
 ## 1차 웹 개선 기준
