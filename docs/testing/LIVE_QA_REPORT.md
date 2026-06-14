@@ -36,3 +36,16 @@
 - `V3__add_user_withdrawal_state.sql`가 운영 DB에 적용되어야 한다.
 - 백엔드 Lambda가 경계값 PR 이후 artifact로 갱신되어야 한다.
 - 배포 후 `npm run e2e:live`는 공개/인증/입력/권한/탈퇴 시나리오를 모두 통과해야 한다.
+
+## 2026-06-14 배포 후 QA 결과
+
+| 영역 | 시나리오 | 결과 | 관측 |
+|------|----------|------|------|
+| 공개 화면 | 공개 route 렌더링과 보호 route redirect | 통과 | `npm run e2e:live` |
+| 인증 | 테스트 계정 회원가입, 토큰 저장, 프로필 진입 | 통과 | 운영 API와 브라우저 localStorage 기준 |
+| 입력 경계 | 게시글/댓글/채팅 500자 허용, 501자 차단 | 통과 | `400 INVALID_REQUEST` 확인 |
+| 페이지네이션 | 게시글 `limit=0`, `limit=101` 보정 | 통과 | meta `limit=1`, `limit=100` 확인 |
+| 친구 | 알 수 없는 친구 추가 method | 통과 | `400 INVALID_FRIEND_METHOD` 확인 |
+| 채팅 권한 | 비참여자 메시지 조회 | 통과 | `403 CHAT403` 확인 |
+| 채팅 재진입 | 메시지 전송 후 목록/방 재진입 | 통과 | 스레드 유지 확인 |
+| 회원탈퇴 | 탈퇴, 기존 토큰 401, 30일 내 로그인 복구 | 통과 | `401 UNAUTHORIZED`, `restored=true` 확인 |
