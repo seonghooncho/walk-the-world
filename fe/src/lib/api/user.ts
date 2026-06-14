@@ -47,6 +47,7 @@ export const userApi = {
   getUser: (userId: number) => apiFetch<PublicProfile>(`/api/users/v1/${userId}`),
   uploadAvatar: (imageKey: string) =>
     apiFetch<{ avatarUrl: string }>(`/api/users/v1/me/avatar?imageKey=${encodeURIComponent(imageKey)}`, { method: "POST" }),
+  withdrawMe: () => apiFetch<null>("/api/users/v1/me", { method: "DELETE" }),
 };
 
 export const stepsApi = {

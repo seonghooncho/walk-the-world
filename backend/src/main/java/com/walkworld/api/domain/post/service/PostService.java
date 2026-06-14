@@ -110,7 +110,7 @@ public class PostService {
         Post.builder()
             .userId(userId)
             .cityId(request.getCityId() != null ? request.getCityId() : user.getCurrentCityId())
-            .content(request.getContent())
+            .content(request.getContent().trim())
             .build();
 
     if (request.getImageKey() != null && !request.getImageKey().isBlank()) {
@@ -174,7 +174,7 @@ public class PostService {
         .orElseThrow(() -> new PostException(PostErrorCode.POST_NOT_FOUND));
 
     Comment comment =
-        Comment.builder().postId(postId).userId(userId).content(request.getContent()).build();
+        Comment.builder().postId(postId).userId(userId).content(request.getContent().trim()).build();
     commentRepository.save(comment);
     return buildCommentResponse(comment);
   }
@@ -244,7 +244,7 @@ public class PostService {
     String imageUrl =
         post.getImageKey() != null ? s3Service.generateDownloadUrl(post.getImageKey()) : null;
     String authorAvatarUrl =
-        author != null ? s3Service.resolvePublicUrl(author.getAvatarUrl()) : null;
+        author != null && author.isActive() ? s3Service.resolvePublicUrl(author.getAvatarUrl()) : null;
 
     return PostConverter.toPostResponse(
         post, author, likeCount, commentCount, isLiked, imageUrl, authorAvatarUrl);
@@ -253,7 +253,7 @@ public class PostService {
   private CommentResponse buildCommentResponse(Comment comment) {
     User author = userRepository.findById(comment.getUserId()).orElse(null);
     String authorAvatarUrl =
-        author != null ? s3Service.resolvePublicUrl(author.getAvatarUrl()) : null;
+        author != null && author.isActive() ? s3Service.resolvePublicUrl(author.getAvatarUrl()) : null;
     return PostConverter.toCommentResponse(comment, author, authorAvatarUrl);
   }
 }

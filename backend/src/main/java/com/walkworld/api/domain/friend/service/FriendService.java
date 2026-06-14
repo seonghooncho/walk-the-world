@@ -54,9 +54,7 @@ public class FriendService {
             .findById(request.getFriendId())
             .orElseThrow(() -> new FriendException(FriendErrorCode.FRIEND_NOT_FOUND));
 
-    Friendship.FriendMethod method =
-        Friendship.FriendMethod.valueOf(
-            request.getMethod() != null ? request.getMethod() : "same_city");
+    Friendship.FriendMethod method = parseMethod(request.getMethod());
 
     switch (method) {
       case same_city -> currencyService.deductCoupon(userId, 1, "같은 도시 친구 추가");
@@ -73,6 +71,15 @@ public class FriendService {
 
     return FriendConverter.toFriendResponse(
         friend, method.name(), s3Service.resolvePublicUrl(friend.getAvatarUrl()));
+  }
+
+  private Friendship.FriendMethod parseMethod(String rawMethod) {
+    String method = rawMethod != null && !rawMethod.isBlank() ? rawMethod.trim() : "same_city";
+    try {
+      return Friendship.FriendMethod.valueOf(method);
+    } catch (IllegalArgumentException exception) {
+      throw new FriendException(FriendErrorCode.INVALID_FRIEND_METHOD);
+    }
   }
 
   public void removeFriend(Long userId, Long friendId) {

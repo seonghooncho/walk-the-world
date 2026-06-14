@@ -1,0 +1,1 @@
+export const SOCIAL_TEXT_MAX_LENGTH = 500;

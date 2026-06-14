@@ -2,6 +2,7 @@ package com.walkworld.api.domain.user.entity;
 
 import com.walkworld.api.global.entity.BaseTimeEntity;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.*;
 
 @Entity
@@ -40,4 +41,20 @@ public class User extends BaseTimeEntity {
 
     @Column(name = "google_id")
     private String googleId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private UserStatus status = UserStatus.active;
+
+    @Column(name = "withdrawn_at")
+    private LocalDateTime withdrawnAt;
+
+    public boolean isActive() {
+        return status == null || status == UserStatus.active;
+    }
+
+    public boolean isWithdrawn() {
+        return status == UserStatus.withdrawn;
+    }
 }

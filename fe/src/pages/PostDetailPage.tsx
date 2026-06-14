@@ -7,6 +7,7 @@ import UserAvatar from "@/components/shared/UserAvatar";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { useAddComment, usePost, usePostComments, useToggleLike } from "@/hooks/useApi";
 import { toUiComment, toUiPost } from "@/lib/city-utils";
+import { SOCIAL_TEXT_MAX_LENGTH } from "@/lib/input-limits";
 import { getTimeAgo } from "@/lib/timeAgo";
 import { toast } from "sonner";
 
@@ -152,6 +153,7 @@ const PostDetailPage = () => {
           <input
             value={text}
             onChange={(event) => setText(event.target.value)}
+            maxLength={SOCIAL_TEXT_MAX_LENGTH}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !isComposingRef.current) {
                 handleSubmit();
@@ -175,6 +177,11 @@ const PostDetailPage = () => {
           >
             <Send className="h-4 w-4" />
           </button>
+        </div>
+        <div className="mt-1 flex justify-end">
+          <span className="text-[10px] text-muted-foreground">
+            {text.length}/{SOCIAL_TEXT_MAX_LENGTH}
+          </span>
         </div>
       </div>
     </AppLayout>

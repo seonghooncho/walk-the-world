@@ -27,6 +27,6 @@ public class CurrencyController {
       @RequestParam(required = false) String type,
       @RequestParam(required = false) String cursor,
       @RequestParam(defaultValue = "20") int limit) {
-    return currencyService.getTransactions(userId, type, cursor, Math.min(limit, 100));
+    return currencyService.getTransactions(userId, type, cursor, Math.max(1, Math.min(limit, 100)));
   }
 }

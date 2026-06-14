@@ -40,4 +40,10 @@ public class UserController {
       @CurrentUserId Long userId, @RequestParam String imageKey) {
     return ApiResponse.ok(userService.uploadAvatar(userId, imageKey));
   }
+
+  @DeleteMapping("/me")
+  public ApiResponse<Void> withdrawMe(@CurrentUserId Long userId) {
+    userService.withdrawAccount(userId);
+    return ApiResponse.ok(null);
+  }
 }

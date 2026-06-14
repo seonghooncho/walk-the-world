@@ -38,7 +38,7 @@ public class ChatController {
       @PathVariable Long roomId,
       @RequestParam(required = false) String cursor,
       @RequestParam(defaultValue = "50") int limit) {
-    return chatService.getMessages(userId, roomId, cursor, Math.min(limit, 100));
+    return chatService.getMessages(userId, roomId, cursor, clampLimit(limit));
   }
 
   @PostMapping("/rooms/{roomId}/messages")
@@ -54,5 +54,9 @@ public class ChatController {
   public ApiResponse<Void> markAsRead(@CurrentUserId Long userId, @PathVariable Long roomId) {
     chatService.markAsRead(userId, roomId);
     return ApiResponse.ok(null);
+  }
+
+  private int clampLimit(int limit) {
+    return Math.max(1, Math.min(limit, 100));
   }
 }
