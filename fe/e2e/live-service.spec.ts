@@ -139,6 +139,7 @@ test.describe("live production QA", () => {
   const createdPosts: Array<{ account: TestAccount; postId: number }> = [];
 
   test.beforeAll(async ({ request }) => {
+    test.setTimeout(120_000);
     primary = await signup(request, "primary");
     secondary = await signup(request, "secondary");
     outsider = await signup(request, "outsider");
