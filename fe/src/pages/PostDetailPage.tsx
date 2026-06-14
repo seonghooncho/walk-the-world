@@ -167,9 +167,11 @@ const PostDetailPage = () => {
             className="flex-1 rounded-full bg-muted px-4 py-2.5 text-sm text-card-foreground placeholder:text-muted-foreground/60 focus:outline-none"
           />
           <button
+            type="button"
             onClick={handleSubmit}
             disabled={!text.trim() || addComment.isPending}
             className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-hero text-primary-foreground disabled:opacity-40"
+            aria-label="댓글 보내기"
           >
             <Send className="h-4 w-4" />
           </button>

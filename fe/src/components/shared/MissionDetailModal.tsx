@@ -17,6 +17,8 @@ import { missionsApi } from "@/lib/api";
 import { useCompleteMission } from "@/hooks/useApi";
 import { uploadImageFile } from "@/lib/upload-file";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const typeLabels: Record<UiMissionType, { label: string; icon: typeof Camera; action: string }> = {
   photo: { label: "사진 미션", icon: Camera, action: "사진을 업로드하세요" },
@@ -32,6 +34,8 @@ interface MissionDetailModalProps {
 }
 
 const MissionDetailModal = ({ mission, onClose }: MissionDetailModalProps) => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const completeMission = useCompleteMission();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -51,6 +55,7 @@ const MissionDetailModal = ({ mission, onClose }: MissionDetailModalProps) => {
   const needsText = mission.type === "writing";
   const isSocial = mission.type === "social";
   const isAiComposite = mission.aiComposite;
+  const hasFriendForSocialMission = !isSocial || (user?.friendCount ?? 0) > 0;
 
   const handleFileChange = (file: File | null) => {
     setSelectedFile(file);
@@ -72,6 +77,9 @@ const MissionDetailModal = ({ mission, onClose }: MissionDetailModalProps) => {
       return false;
     }
     if (needsText && !text.trim()) {
+      return false;
+    }
+    if (isSocial && !hasFriendForSocialMission) {
       return false;
     }
     return true;
@@ -280,8 +288,26 @@ const MissionDetailModal = ({ mission, onClose }: MissionDetailModalProps) => {
           {isSocial && (
             <div className="rounded-2xl bg-muted/50 p-4 text-center">
               <Users className="mx-auto mb-2 h-8 w-8 text-primary" />
-              <p className="text-sm font-medium text-card-foreground">도시 커뮤니티에서 친구를 맺어보세요</p>
-              <p className="mt-1 text-xs text-muted-foreground">친구 추가 API와 연결된 화면에서 완료할 수 있습니다</p>
+              <p className="text-sm font-medium text-card-foreground">
+                {hasFriendForSocialMission ? "친구 연결 조건을 만족했습니다" : "도시 커뮤니티에서 친구를 맺어보세요"}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {hasFriendForSocialMission
+                  ? "아래 버튼으로 소셜 미션을 완료할 수 있습니다"
+                  : "친구를 1명 이상 추가하면 이 미션을 완료할 수 있습니다"}
+              </p>
+              {!hasFriendForSocialMission && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    navigate("/city");
+                  }}
+                  className="mt-3 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
+                >
+                  도시 커뮤니티로 이동
+                </button>
+              )}
             </div>
           )}
 
@@ -296,7 +322,7 @@ const MissionDetailModal = ({ mission, onClose }: MissionDetailModalProps) => {
             ) : (
               <>
                 <Check className="h-5 w-5" />
-                {isSocial ? "미션 완료하기" : "인증하고 게시하기"}
+                {isSocial && !hasFriendForSocialMission ? "친구 추가 후 완료 가능" : isSocial ? "미션 완료하기" : "인증하고 게시하기"}
               </>
             )}
           </motion.button>

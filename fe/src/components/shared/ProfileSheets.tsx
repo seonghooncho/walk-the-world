@@ -59,7 +59,7 @@ export const SettingsSheet = ({
 
 // My posts sheet
 export const MyPostsSheet = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
-  const { data, isLoading } = useMyPosts();
+  const { data, isLoading } = useMyPosts({ enabled: open });
   const myPosts = (data?.pages ?? []).flatMap((page) => page.data).map(toUiPost);
 
   return (
