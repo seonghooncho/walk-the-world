@@ -535,6 +535,35 @@
 
 ---
 
+### GET `api/chat/v1/rooms/{roomId}`
+
+채팅방 단건 조회. `/chat/{roomId}` 직접 진입처럼 채팅방 목록 캐시가 비어 있어도 참여자라면 방 정보를 복구할 수 있다.
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "room_uuid",
+    "friendId": "user2",
+    "friendName": "박모험",
+    "friendAvatar": "",
+    "lastMessage": "도쿄타워 근처에서 만날까요? 🗼",
+    "lastMessageAt": "2026-03-08T14:30:00Z",
+    "unreadCount": 2
+  }
+}
+```
+
+**Error:**
+
+| Code | HTTP | 설명 |
+|------|------|------|
+| `CHAT404` | 404 | 채팅방 없음 |
+| `CHAT403` | 403 | 참여자가 아닌 채팅방 접근 |
+
+---
+
 ### GET `api/chat/v1/rooms/{roomId}/messages`
 
 채팅방 메시지 목록 조회 (페이지네이션, 최신순)

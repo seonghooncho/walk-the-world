@@ -71,6 +71,7 @@ export const friendsApi = {
 
 export const chatApi = {
   getRooms: () => apiFetch<ChatRoomData[]>("/api/chat/v1/rooms"),
+  getRoom: (roomId: number) => apiFetch<ChatRoomData>(`/api/chat/v1/rooms/${roomId}`),
   getOrCreateRoom: (friendId: number) =>
     apiFetch<ChatRoomData>("/api/chat/v1/rooms", {
       method: "POST",

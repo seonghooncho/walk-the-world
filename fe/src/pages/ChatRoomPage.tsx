@@ -6,7 +6,7 @@ import UserAvatar from "@/components/shared/UserAvatar";
 import ProfileDetailSheet from "@/components/shared/ProfileDetailSheet";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { useAuth } from "@/contexts/AuthContext";
-import { useChatMessages, useChatRooms, useMarkChatAsRead, usePublicProfile, useSendMessage } from "@/hooks/useApi";
+import { useChatMessages, useChatRoom, useChatRooms, useMarkChatAsRead, usePublicProfile, useSendMessage } from "@/hooks/useApi";
 import { groupMessagesByDate, toUiChatMessage, toUiProfile } from "@/lib/city-utils";
 import { SOCIAL_TEXT_MAX_LENGTH } from "@/lib/input-limits";
 import { toast } from "sonner";
@@ -22,11 +22,16 @@ const ChatRoomPage = () => {
   const roomId = Number(chatId);
 
   const { data: roomsData, isLoading: isRoomsLoading } = useChatRooms();
+  const listedRoom = (roomsData ?? []).find((candidate) => candidate.id === roomId);
+  const shouldFetchDirectRoom = Number.isFinite(roomId) && roomId > 0 && !isRoomsLoading && !listedRoom;
+  const { data: directRoom, isLoading: isDirectRoomLoading } = useChatRoom(roomId, {
+    enabled: shouldFetchDirectRoom,
+  });
   const { data: messagesData, isLoading: isMessagesLoading } = useChatMessages(roomId);
   const sendMessage = useSendMessage();
   const markChatAsRead = useMarkChatAsRead();
 
-  const room = (roomsData ?? []).find((candidate) => candidate.id === roomId);
+  const room = listedRoom ?? directRoom;
   const friendId = room?.friendId ?? 0;
   const { data: friendProfile } = usePublicProfile(friendId);
   const messages = useMemo(
@@ -77,7 +82,7 @@ const ChatRoomPage = () => {
     );
   }
 
-  if (isRoomsLoading || isMessagesLoading || !user) {
+  if (isRoomsLoading || (shouldFetchDirectRoom && isDirectRoomLoading) || isMessagesLoading || !user) {
     return (
       <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center bg-background">
         <LoadingSpinner />

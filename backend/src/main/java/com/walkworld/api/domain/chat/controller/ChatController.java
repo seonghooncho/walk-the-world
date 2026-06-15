@@ -25,6 +25,12 @@ public class ChatController {
     return ApiResponse.ok(chatService.getRooms(userId));
   }
 
+  @GetMapping("/rooms/{roomId}")
+  public ApiResponse<ChatRoomResponse> getRoom(
+      @CurrentUserId Long userId, @PathVariable Long roomId) {
+    return ApiResponse.ok(chatService.getRoom(userId, roomId));
+  }
+
   @PostMapping("/rooms")
   @ResponseStatus(HttpStatus.CREATED)
   public ApiResponse<ChatRoomResponse> getOrCreateRoom(
