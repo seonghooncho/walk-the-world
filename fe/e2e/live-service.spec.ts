@@ -173,12 +173,21 @@ const login = async (request: APIRequestContext, account: TestAccount): Promise<
 };
 
 const setBrowserTokens = async (page: Page, account: TestAccount) => {
+  const tokens = { accessToken: account.tokens.accessToken, refreshToken: account.tokens.refreshToken };
   await page.addInitScript(
     ({ accessToken, refreshToken }) => {
       localStorage.setItem("ww_access_token", accessToken);
       localStorage.setItem("ww_refresh_token", refreshToken);
     },
-    { accessToken: account.tokens.accessToken, refreshToken: account.tokens.refreshToken },
+    tokens,
+  );
+  await page.goto("/", { waitUntil: "domcontentloaded", timeout: REQUEST_TIMEOUT });
+  await page.evaluate(
+    ({ accessToken, refreshToken }) => {
+      localStorage.setItem("ww_access_token", accessToken);
+      localStorage.setItem("ww_refresh_token", refreshToken);
+    },
+    tokens,
   );
 };
 
