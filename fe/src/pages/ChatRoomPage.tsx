@@ -20,10 +20,11 @@ const ChatRoomPage = () => {
   const bottomRef = useRef<HTMLDivElement>(null);
   const isComposingRef = useRef(false);
   const roomId = Number(chatId);
+  const hasValidRoomId = Number.isFinite(roomId) && roomId > 0;
 
   const { data: roomsData, isLoading: isRoomsLoading } = useChatRooms();
   const listedRoom = (roomsData ?? []).find((candidate) => candidate.id === roomId);
-  const shouldFetchDirectRoom = Number.isFinite(roomId) && roomId > 0 && !isRoomsLoading && !listedRoom;
+  const shouldFetchDirectRoom = hasValidRoomId && !listedRoom;
   const { data: directRoom, isLoading: isDirectRoomLoading } = useChatRoom(roomId, {
     enabled: shouldFetchDirectRoom,
   });
@@ -32,6 +33,7 @@ const ChatRoomPage = () => {
   const markChatAsRead = useMarkChatAsRead();
 
   const room = listedRoom ?? directRoom;
+  const isResolvingRoom = !room && (isRoomsLoading || isDirectRoomLoading);
   const friendId = room?.friendId ?? 0;
   const { data: friendProfile } = usePublicProfile(friendId);
   const messages = useMemo(
@@ -82,7 +84,7 @@ const ChatRoomPage = () => {
     );
   }
 
-  if (isRoomsLoading || (shouldFetchDirectRoom && isDirectRoomLoading) || isMessagesLoading || !user) {
+  if (isResolvingRoom || !user) {
     return (
       <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center bg-background">
         <LoadingSpinner />
@@ -140,56 +142,62 @@ const ChatRoomPage = () => {
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-3">
-        {groupedByDate.map((group) => (
-          <div key={group.date}>
-            <div className="my-3 flex justify-center">
-              <span className="rounded-full bg-muted px-3 py-1 text-[10px] text-muted-foreground">
-                {formatDate(group.date)}
-              </span>
-            </div>
-            <div className="space-y-1.5">
-              {group.messages.map((message, index) => {
-                const isMine = message.senderId === user.id;
-                const showTime = shouldShowTime(group.messages, index);
-                const isUnread = isMine && message.read === false;
-
-                return (
-                  <motion.div
-                    key={message.id}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`flex ${isMine ? "justify-end" : "justify-start"}`}
-                  >
-                    <div className={`flex max-w-[75%] items-end gap-1.5 ${isMine ? "flex-row-reverse" : ""}`}>
-                      <div
-                        className={`whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2.5 text-sm ${
-                          isMine
-                            ? "rounded-br-md bg-primary text-primary-foreground"
-                            : "rounded-bl-md bg-muted text-foreground"
-                        }`}
-                      >
-                        {message.content}
-                      </div>
-                      {showTime && (
-                        <div className={`flex shrink-0 flex-col ${isMine ? "items-end" : "items-start"}`}>
-                          {isMine && isUnread && (
-                            <span className="text-[10px] font-semibold leading-tight text-primary">1</span>
-                          )}
-                          <span className="whitespace-nowrap text-[10px] text-muted-foreground">
-                            {formatTime(message.createdAt)}
-                          </span>
-                        </div>
-                      )}
-                      {!showTime && isMine && isUnread && (
-                        <span className="shrink-0 text-[10px] font-semibold text-primary">1</span>
-                      )}
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
+        {isMessagesLoading ? (
+          <div className="flex min-h-[40vh] items-center justify-center">
+            <LoadingSpinner />
           </div>
-        ))}
+        ) : (
+          groupedByDate.map((group) => (
+            <div key={group.date}>
+              <div className="my-3 flex justify-center">
+                <span className="rounded-full bg-muted px-3 py-1 text-[10px] text-muted-foreground">
+                  {formatDate(group.date)}
+                </span>
+              </div>
+              <div className="space-y-1.5">
+                {group.messages.map((message, index) => {
+                  const isMine = message.senderId === user.id;
+                  const showTime = shouldShowTime(group.messages, index);
+                  const isUnread = isMine && message.read === false;
+
+                  return (
+                    <motion.div
+                      key={message.id}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+                    >
+                      <div className={`flex max-w-[75%] items-end gap-1.5 ${isMine ? "flex-row-reverse" : ""}`}>
+                        <div
+                          className={`whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2.5 text-sm ${
+                            isMine
+                              ? "rounded-br-md bg-primary text-primary-foreground"
+                              : "rounded-bl-md bg-muted text-foreground"
+                          }`}
+                        >
+                          {message.content}
+                        </div>
+                        {showTime && (
+                          <div className={`flex shrink-0 flex-col ${isMine ? "items-end" : "items-start"}`}>
+                            {isMine && isUnread && (
+                              <span className="text-[10px] font-semibold leading-tight text-primary">1</span>
+                            )}
+                            <span className="whitespace-nowrap text-[10px] text-muted-foreground">
+                              {formatTime(message.createdAt)}
+                            </span>
+                          </div>
+                        )}
+                        {!showTime && isMine && isUnread && (
+                          <span className="shrink-0 text-[10px] font-semibold text-primary">1</span>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          ))
+        )}
         <div ref={bottomRef} />
       </div>
 
