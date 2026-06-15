@@ -360,6 +360,7 @@ test.describe("live production QA", () => {
   test("friend, chat, reentry, and authorization boundaries hold in production", async ({ request, page }) => {
     test.setTimeout(120_000);
     const fiveHundredChars = "메".repeat(500);
+    const uiReentryMessage = `QA 채팅 재진입 ${RUN_ID}`;
 
     const friend = await expectOk<FriendResponse>(
       await request.post("/api/friends/v1", {
@@ -425,11 +426,14 @@ test.describe("live production QA", () => {
 
     await setBrowserTokens(page, primary);
     await page.goto(`/chat/${room.data.id}`, { waitUntil: "domcontentloaded", timeout: REQUEST_TIMEOUT });
-    await expect(page.getByText(fiveHundredChars.slice(0, 80))).toBeVisible();
+    await expect(page.getByPlaceholder("메시지를 입력하세요...")).toBeVisible();
+    await page.getByPlaceholder("메시지를 입력하세요...").fill(uiReentryMessage);
+    await page.getByRole("button", { name: "메시지 보내기" }).click();
+    await expect(page.getByText(uiReentryMessage)).toBeVisible();
     await page.goto("/feed", { waitUntil: "domcontentloaded", timeout: REQUEST_TIMEOUT });
-    await expect(page.getByText(fiveHundredChars.slice(0, 80))).toBeVisible();
+    await expect(page.getByText(uiReentryMessage)).toBeVisible();
     await page.goto(`/chat/${room.data.id}`, { waitUntil: "domcontentloaded", timeout: REQUEST_TIMEOUT });
-    await expect(page.getByText(fiveHundredChars.slice(0, 80))).toBeVisible();
+    await expect(page.getByText(uiReentryMessage)).toBeVisible();
   });
 
   test("daily walk session records GPS, proof mission, rewards, and coupon exchange", async ({ request }) => {
