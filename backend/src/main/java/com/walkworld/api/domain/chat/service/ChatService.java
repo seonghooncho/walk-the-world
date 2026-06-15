@@ -41,6 +41,11 @@ public class ChatService {
         .toList();
   }
 
+  @Transactional(readOnly = true)
+  public ChatRoomResponse getRoom(Long userId, Long roomId) {
+    return toRoomResponse(userId, requireRoomParticipant(userId, roomId));
+  }
+
   public ChatRoomResponse getOrCreateRoom(Long userId, Long friendId) {
     if (userId.equals(friendId)) {
       throw new ChatException(ChatErrorCode.SELF_CHAT_NOT_ALLOWED);

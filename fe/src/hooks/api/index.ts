@@ -4,6 +4,7 @@ export {
   useAddComment,
   useAddFriend,
   useEnsureChatRoom,
+  useChatRoom,
   useChatMessages,
   useChatRooms,
   useCreatePost,

@@ -368,7 +368,35 @@ public class WalkSessionService {
     for (int i = 0; i < candidates.size(); i++) {
       rotated.add(candidates.get((i + offset) % candidates.size()));
     }
-    return rotated;
+    return ensureSessionProofMission(rotated);
+  }
+
+  private List<MissionTemplate> ensureSessionProofMission(List<MissionTemplate> templates) {
+    int visibleCount = Math.min(5, templates.size());
+    if (visibleCount == 0) {
+      return templates;
+    }
+
+    boolean sessionVisible = false;
+    int firstSessionIndex = -1;
+    for (int i = 0; i < templates.size(); i++) {
+      boolean isSession = templates.get(i).proofType() == WalkSessionMission.ProofType.session;
+      if (isSession && firstSessionIndex < 0) {
+        firstSessionIndex = i;
+      }
+      if (isSession && i < visibleCount) {
+        sessionVisible = true;
+      }
+    }
+
+    if (sessionVisible || firstSessionIndex < 0) {
+      return templates;
+    }
+
+    List<MissionTemplate> reordered = new ArrayList<>(templates);
+    MissionTemplate sessionMission = reordered.remove(firstSessionIndex);
+    reordered.add(visibleCount - 1, sessionMission);
+    return reordered;
   }
 
   private void validateProof(WalkSessionMission mission, MissionProofRequest request) {

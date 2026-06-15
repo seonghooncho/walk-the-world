@@ -52,6 +52,16 @@ class ChatServiceTest {
   }
 
   @Test
+  void participantCanOpenRoomByDirectLink() {
+    when(roomRepository.findById(10L)).thenReturn(Optional.of(room()));
+
+    var response = chatService.getRoom(1L, 10L);
+
+    assertEquals(10L, response.getId());
+    assertEquals(2L, response.getFriendId());
+  }
+
+  @Test
   void nonParticipantCannotSendMessage() {
     when(roomRepository.findById(10L)).thenReturn(Optional.of(room()));
 

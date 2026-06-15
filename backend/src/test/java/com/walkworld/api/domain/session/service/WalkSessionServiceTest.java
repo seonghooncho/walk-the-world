@@ -118,6 +118,7 @@ class WalkSessionServiceTest {
     assertEquals("active", response.status());
     assertEquals(5, response.missions().size());
     assertTrue(response.missions().stream().allMatch(mission -> mission.id() != null));
+    assertTrue(response.missions().stream().anyMatch(mission -> "session".equals(mission.proofType())));
     verify(missionRepository, times(5)).save(any(WalkSessionMission.class));
   }
 

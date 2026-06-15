@@ -35,6 +35,15 @@ export function useChatRooms() {
   });
 }
 
+export function useChatRoom(roomId: number, options: { enabled?: boolean } = {}) {
+  return useQuery({
+    queryKey: ["chatRoom", roomId],
+    queryFn: async () => (await chatApi.getRoom(roomId)).data,
+    staleTime: 10_000,
+    enabled: (options.enabled ?? true) && isAuthenticated() && Number.isFinite(roomId) && roomId > 0,
+  });
+}
+
 export function useEnsureChatRoom() {
   const queryClient = useQueryClient();
 
@@ -60,6 +69,7 @@ export function useMarkChatAsRead() {
     mutationFn: async (roomId: number) => (await chatApi.markAsRead(roomId)).data,
     onSuccess: (_, roomId) => {
       queryClient.invalidateQueries({ queryKey: ["chatRooms"] });
+      queryClient.invalidateQueries({ queryKey: ["chatRoom", roomId] });
       queryClient.invalidateQueries({ queryKey: ["chatMessages", roomId] });
     },
   });
@@ -106,6 +116,7 @@ export function useSendMessage() {
       );
       queryClient.invalidateQueries({ queryKey: ["chatMessages", variables.roomId] });
       queryClient.invalidateQueries({ queryKey: ["chatRooms"] });
+      queryClient.invalidateQueries({ queryKey: ["chatRoom", variables.roomId] });
     },
   });
 }
