@@ -76,7 +76,7 @@ const ProfilePage = () => {
     );
   }
 
-  if (isLoading || isBadgesLoading || !user) {
+  if (isLoading || !user) {
     return (
       <AppLayout>
         <div className="flex h-[60vh] items-center justify-center">
@@ -178,7 +178,9 @@ const ProfilePage = () => {
               <Stamp className="h-4 w-4 text-primary" />
               <h3 className="text-sm font-extrabold text-card-foreground">방문 도시 스탬프</h3>
             </div>
-            <span className="text-[11px] text-muted-foreground">{visitedCities.length} cities</span>
+            <span className="text-[11px] text-muted-foreground">
+              {isBadgesLoading ? "동기화 중" : `${visitedCities.length} cities`}
+            </span>
           </div>
           <div className="grid grid-cols-3 gap-2">
             {visitedCities.map((city) => (
