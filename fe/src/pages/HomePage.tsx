@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import {
   Camera,
   Check,
+  ChevronRight,
   CircleStop,
   Gift,
   Headphones,
@@ -11,6 +12,8 @@ import {
   LogIn,
   MapPin,
   Navigation,
+  Pause,
+  Plane,
   Play,
   Route,
   Sparkles,
@@ -18,6 +21,7 @@ import {
   Ticket,
   Timer,
   Upload,
+  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
@@ -39,9 +43,9 @@ import cityTokyoImg from "@/assets/city-tokyo.jpg";
 import { toast } from "sonner";
 
 const fade = (delay: number) => ({
-  initial: { opacity: 0, y: 16 },
+  initial: { opacity: 0, y: 14 },
   animate: { opacity: 1, y: 0 },
-  transition: { delay, duration: 0.45, ease: [0.4, 0, 0.2, 1] as const },
+  transition: { delay, duration: 0.4, ease: [0.4, 0, 0.2, 1] as const },
 });
 
 const proofLabel: Record<SessionMissionData["proofType"], string> = {
@@ -51,6 +55,99 @@ const proofLabel: Record<SessionMissionData["proofType"], string> = {
   screenshot: "스크린샷",
   social: "소셜",
 };
+
+type TravelStage = "home" | "departing" | "arrived" | "mission";
+
+interface DestinationProfile {
+  arrivalName: string;
+  countryLine: string;
+  facts: string[];
+  musicLabel: string;
+  musicUrl: string;
+  notes: number[];
+  accent: string;
+}
+
+interface MissionCopy {
+  title: string;
+  prompt: string;
+}
+
+const destinationProfiles: Record<string, DestinationProfile> = {
+  seoul: {
+    arrivalName: "서울",
+    countryLine: "한강, 골목, 편의점 불빛이 한 번에 이어지는 도시 산책지예요.",
+    facts: ["궁궐 담장과 높은 빌딩이 가까이 있어요.", "한강 근처에서는 하늘이 크게 열립니다.", "골목마다 작은 간식 탐험이 잘 어울려요."],
+    musicLabel: "저작권 안전 K-walk lo-fi",
+    musicUrl: "https://pixabay.com/music/search/korea%20lofi/",
+    notes: [523, 659, 784, 659],
+    accent: "from-primary via-ocean to-success",
+  },
+  tokyo: {
+    arrivalName: "도쿄",
+    countryLine: "작은 골목, 횡단보도, 네온 색감이 산책 미션과 잘 맞는 도시예요.",
+    facts: ["붉은 간판과 작은 편의점 불빛이 도시 리듬을 만들어요.", "횡단보도와 전철역 주변은 여행자의 장면이 많아요.", "하늘, 표식, 간식만 찾아도 도쿄 산책처럼 느껴집니다."],
+    musicLabel: "저작권 안전 Tokyo city pop",
+    musicUrl: "https://pixabay.com/music/search/japan%20city%20pop/",
+    notes: [587, 740, 880, 740],
+    accent: "from-accent via-gold to-primary",
+  },
+  busan: {
+    arrivalName: "부산",
+    countryLine: "바다 바람, 언덕길, 시장 간식이 산책을 여행처럼 만드는 도시예요.",
+    facts: ["바닷가 근처에서는 넓은 하늘 사진이 잘 어울려요.", "언덕과 골목은 짧은 산책에도 여행감을 줍니다.", "시장과 편의점 간식 미션을 붙이기 좋아요."],
+    musicLabel: "저작권 안전 seaside walk",
+    musicUrl: "https://pixabay.com/music/search/seaside%20walk/",
+    notes: [440, 554, 659, 554],
+    accent: "from-ocean via-primary to-gold",
+  },
+  osaka: {
+    arrivalName: "오사카",
+    countryLine: "간판, 강변, 간식 탐험이 경쾌하게 이어지는 도시예요.",
+    facts: ["화려한 표식과 간식 미션이 자연스럽게 이어져요.", "강변 산책은 15분 세션 목표와 잘 맞습니다.", "빨간 표식 찾기는 오사카 골목 분위기와 닮았어요."],
+    musicLabel: "저작권 안전 Osaka groove",
+    musicUrl: "https://pixabay.com/music/search/japan%20groove/",
+    notes: [494, 622, 740, 622],
+    accent: "from-gold via-accent to-primary",
+  },
+  paris: {
+    arrivalName: "파리",
+    countryLine: "가로수, 횡단보도, 카페 앞 장면이 산책 증거로 남기 좋은 도시예요.",
+    facts: ["가로수와 건물 사이 하늘을 찾기 좋아요.", "작은 표식 하나도 엽서 같은 장면이 됩니다.", "짧은 산책 기록이 여권의 한 칸이 됩니다."],
+    musicLabel: "저작권 안전 Paris walk",
+    musicUrl: "https://pixabay.com/music/search/paris%20walk/",
+    notes: [392, 494, 587, 494],
+    accent: "from-earth via-gold to-ocean",
+  },
+  london: {
+    arrivalName: "런던",
+    countryLine: "횡단보도, 공원, 붉은 표식이 오늘의 미션을 또렷하게 만들어줘요.",
+    facts: ["빨간 표식 찾기 미션과 잘 맞는 도시예요.", "공원 근처에서는 나무 여러 그루를 한 프레임에 담기 좋아요.", "흐린 하늘도 오늘의 여행 기록이 됩니다."],
+    musicLabel: "저작권 안전 London stroll",
+    musicUrl: "https://pixabay.com/music/search/london%20stroll/",
+    notes: [349, 440, 523, 440],
+    accent: "from-primary via-earth to-accent",
+  },
+  newyork: {
+    arrivalName: "뉴욕",
+    countryLine: "블록마다 표식과 횡단보도가 이어지는 빠른 리듬의 도시예요.",
+    facts: ["횡단보도, 간판, 하늘 틈이 미션 proof가 됩니다.", "짧은 러닝 세션도 여행 티켓으로 쌓여요.", "친구 스토리에 올리기 좋은 도시 장면이 많아요."],
+    musicLabel: "저작권 안전 city running beat",
+    musicUrl: "https://pixabay.com/music/search/city%20running/",
+    notes: [659, 784, 988, 784],
+    accent: "from-ocean via-accent to-gold",
+  },
+};
+
+const fallbackProfile = (cityName: string): DestinationProfile => ({
+  arrivalName: cityName,
+  countryLine: `${cityName}의 거리 장면을 오늘 산책 미션으로 가볍게 수집해요.`,
+  facts: [`${cityName}에서 보이는 하늘, 표식, 간식이 오늘의 여권 조각이 됩니다.`, "GPS가 완벽하지 않아도 proof 미션으로 여행을 남길 수 있어요.", "미션은 선택이에요. 지나치고 계속 걸어도 기록은 남습니다."],
+  musicLabel: "저작권 안전 travel walk",
+  musicUrl: "https://pixabay.com/music/search/travel%20walk/",
+  notes: [440, 523, 659, 523],
+  accent: "from-primary via-ocean to-gold",
+});
 
 const guestToday: TodaySessionData = {
   sessionId: null,
@@ -70,7 +167,7 @@ const guestToday: TodaySessionData = {
   stampsEarned: 0,
   environmentHint: "city",
   playlistTitle: "오늘의 산책 플레이리스트",
-  playlistUrl: "https://www.youtube.com/results?search_query=walking+playlist",
+  playlistUrl: "https://pixabay.com/music/search/travel%20walk/",
   startedAt: null,
   endedAt: null,
   missions: [
@@ -171,14 +268,90 @@ const inferEnvironmentHint = (point?: GeoPointPayload) => {
   return "city-fallback";
 };
 
+const getMissionCopy = (mission: SessionMissionData, profile: DestinationProfile, cityName: string): MissionCopy => {
+  switch (mission.missionKey) {
+    case "open_sky":
+      return {
+        title: "도착 첫 하늘",
+        prompt: `${profile.arrivalName}에 막 도착한 느낌으로 뻥 뚫린 하늘을 한 장 남겨보세요.`,
+      };
+    case "crosswalk":
+      return {
+        title: "여행자의 횡단보도",
+        prompt: `${cityName} 거리를 건너는 기분으로 횡단보도나 보행자 표식을 안전하게 찍어보세요.`,
+      };
+    case "three_trees":
+      return {
+        title: "초록 골목 발견",
+        prompt: "한 프레임 안에 나무가 여러 그루 들어오게 담아보세요. 공원길이면 더 좋아요.",
+      };
+    case "snack_find":
+      return {
+        title: "현지 간식 탐색",
+        prompt: "편의점이나 작은 가게에서 여행 중 만난 것 같은 간식 하나를 찾아보세요.",
+      };
+    case "walk_15":
+      return {
+        title: "15분 도시 산책",
+        prompt: "걷는 리듬을 15분만 이어가면 세션 기록으로 바로 인증할 수 있어요.",
+      };
+    case "red_sign":
+      return {
+        title: "붉은 네온 찾기",
+        prompt: `${profile.arrivalName}의 밤거리처럼 빨간 간판, 표식, 물건을 한 장 찍어보세요.`,
+      };
+    default:
+      return {
+        title: mission.title,
+        prompt: mission.description,
+      };
+  }
+};
+
+const playTravelCue = (notes: number[]) => {
+  if (typeof window === "undefined") return;
+  const audioWindow = window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext };
+  const AudioContextConstructor = audioWindow.AudioContext || audioWindow.webkitAudioContext;
+  if (!AudioContextConstructor) return;
+
+  const context = new AudioContextConstructor();
+  const gain = context.createGain();
+  gain.gain.setValueAtTime(0.0001, context.currentTime);
+  gain.connect(context.destination);
+
+  notes.forEach((frequency, index) => {
+    const oscillator = context.createOscillator();
+    const start = context.currentTime + index * 0.13;
+    const end = start + 0.18;
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(frequency, start);
+    oscillator.connect(gain);
+    gain.gain.exponentialRampToValueAtTime(0.04, start + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, end);
+    oscillator.start(start);
+    oscillator.stop(end);
+  });
+
+  window.setTimeout(() => {
+    void context.close();
+  }, notes.length * 150 + 350);
+};
+
 const HomePage = () => {
   const navigate = useNavigate();
   const { user, isLoggedIn } = useAuth();
   const watchIdRef = useRef<number | null>(null);
+  const startedInViewRef = useRef(false);
   const [gpsStatus, setGpsStatus] = useState("GPS 대기 중");
   const [textProofs, setTextProofs] = useState<Record<number, string>>({});
   const [uploadingMissionId, setUploadingMissionId] = useState<number | null>(null);
   const [localTick, setLocalTick] = useState(0);
+  const [travelStage, setTravelStage] = useState<TravelStage>("home");
+  const [missionIndex, setMissionIndex] = useState(0);
+  const [skippedMissionKeys, setSkippedMissionKeys] = useState<string[]>([]);
+  const [showResumePrompt, setShowResumePrompt] = useState(false);
+  const [factIndex, setFactIndex] = useState(0);
+  const [lastCompletedStamp, setLastCompletedStamp] = useState<string | null>(null);
 
   const { data: todayResponse, isLoading: isTodayLoading } = useTodaySession();
   const { data: currency } = useCurrency();
@@ -191,11 +364,17 @@ const HomePage = () => {
 
   const today = isLoggedIn ? todayResponse : guestToday;
   const activeToday = today ?? guestToday;
+  const profile = destinationProfiles[activeToday.cityId] ?? fallbackProfile(activeToday.cityName);
   const isActive = activeToday.status === "active";
   const isFinished = activeToday.status === "completed" || activeToday.status === "abandoned";
-  const completedMissionCount = activeToday.missions.filter((mission) => mission.status === "completed").length;
+  const visibleMissions = activeToday.missions.slice(0, 5);
+  const completedMissionCount = visibleMissions.filter((mission) => mission.status === "completed").length;
+  const skippedMissionCount = visibleMissions.filter((mission) => skippedMissionKeys.includes(mission.missionKey)).length;
+  const missionProgressLabel = `${completedMissionCount}/5개 완료`;
   const ticketBalance = currency?.tickets ?? user?.tickets ?? 0;
   const couponBalance = currency?.coupons ?? user?.coupons ?? 0;
+  const currentMission = visibleMissions[missionIndex] ?? visibleMissions[visibleMissions.length - 1];
+  const currentMissionCopy = currentMission ? getMissionCopy(currentMission, profile, activeToday.cityName) : null;
 
   const elapsedSeconds = useMemo(() => {
     if (!isActive || !activeToday.startedAt) return activeToday.durationSeconds;
@@ -220,6 +399,48 @@ const HomePage = () => {
     },
     [],
   );
+
+  useEffect(() => {
+    if (travelStage === "departing") {
+      const timer = window.setTimeout(() => setTravelStage("arrived"), 1500);
+      return () => window.clearTimeout(timer);
+    }
+
+    if (travelStage === "arrived") {
+      const timer = window.setTimeout(() => setTravelStage("mission"), 2300);
+      return () => window.clearTimeout(timer);
+    }
+
+    return undefined;
+  }, [travelStage]);
+
+  useEffect(() => {
+    if (travelStage === "home") return undefined;
+    const timer = window.setInterval(() => {
+      setFactIndex((value) => (value + 1) % profile.facts.length);
+    }, 2600);
+    return () => window.clearInterval(timer);
+  }, [profile.facts.length, travelStage]);
+
+  useEffect(() => {
+    if (!isLoggedIn || !isActive || travelStage !== "home" || startedInViewRef.current || !activeToday.sessionId) {
+      return;
+    }
+
+    const key = `ww_resume_prompt_${activeToday.sessionId}`;
+    if (window.sessionStorage.getItem(key)) return;
+    window.sessionStorage.setItem(key, "seen");
+    setShowResumePrompt(true);
+  }, [activeToday.sessionId, isActive, isLoggedIn, travelStage]);
+
+  useEffect(() => {
+    if (currentMission?.status === "completed" && missionIndex < visibleMissions.length - 1) {
+      const timer = window.setTimeout(() => setMissionIndex((value) => Math.min(value + 1, visibleMissions.length - 1)), 450);
+      return () => window.clearTimeout(timer);
+    }
+
+    return undefined;
+  }, [currentMission?.status, missionIndex, visibleMissions.length]);
 
   if (isLoggedIn && isTodayLoading && !todayResponse) {
     return (
@@ -271,16 +492,34 @@ const HomePage = () => {
     );
   };
 
+  const enterTravelFlow = () => {
+    setFactIndex(0);
+    setLastCompletedStamp(null);
+    const firstAvailableIndex = visibleMissions.findIndex((mission) => mission.status !== "completed" && !skippedMissionKeys.includes(mission.missionKey));
+    setMissionIndex(firstAvailableIndex >= 0 ? firstAvailableIndex : 0);
+    setTravelStage("departing");
+    setShowResumePrompt(false);
+    playTravelCue(profile.notes);
+  };
+
   const handleStart = async () => {
     if (!isLoggedIn) {
       navigate(`/login?redirect=${encodeURIComponent("/")}`);
       return;
     }
 
-    if (activeToday.playlistUrl) {
-      window.open(activeToday.playlistUrl, "_blank", "noopener,noreferrer");
+    if (isActive && activeToday.sessionId) {
+      startedInViewRef.current = true;
+      beginLocationWatch(activeToday.sessionId);
+      enterTravelFlow();
+      toast.success("잠시 멈춘 여행을 이어갑니다", {
+        description: "이전 미션 상태를 유지했어요.",
+      });
+      return;
     }
 
+    startedInViewRef.current = true;
+    enterTravelFlow();
     const point = await getInitialPosition();
     const data = await startSession.mutateAsync({
       activityType: "walk",
@@ -293,8 +532,20 @@ const HomePage = () => {
       beginLocationWatch(data.sessionId);
     }
 
-    toast.success("오늘의 산책이 시작됐어요", {
-      description: "미션은 선택이에요. 멈춰도 지금까지의 거리와 인증으로 보상을 받을 수 있습니다.",
+    toast.success("오늘의 여행 산책이 시작됐어요", {
+      description: "미션은 선택이에요. 중간에 멈춰도 거리와 인증으로 보상을 받을 수 있습니다.",
+    });
+  };
+
+  const handlePause = () => {
+    if (watchIdRef.current !== null) {
+      navigator.geolocation?.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+    setTravelStage("home");
+    setGpsStatus("잠시 멈춤 · 다시 시작하면 이전 미션을 이어갈 수 있어요");
+    toast.info("여행을 잠시 멈췄어요", {
+      description: "오늘 산책 끝내기를 누르기 전까지 미션을 이어갈 수 있습니다.",
     });
   };
 
@@ -306,8 +557,30 @@ const HomePage = () => {
     }
 
     const result = await finishSession.mutateAsync(activeToday.sessionId);
+    setTravelStage("home");
     toast.success(result.status === "completed" ? "오늘의 여행 목표를 채웠어요" : "오늘 산책 기록을 저장했어요", {
       description: `티켓 ${result.ticketsEarned}장 · 스탬프 ${result.stampsEarned}개`,
+    });
+  };
+
+  const goNextMission = () => {
+    setMissionIndex((value) => Math.min(value + 1, visibleMissions.length - 1));
+  };
+
+  const handleSkipMission = () => {
+    if (!currentMission) return;
+    setLastCompletedStamp(null);
+    setSkippedMissionKeys((prev) => (prev.includes(currentMission.missionKey) ? prev : [...prev, currentMission.missionKey]));
+    if (missionIndex < visibleMissions.length - 1) {
+      goNextMission();
+      toast.info("이번 미션은 넘겼어요", {
+        description: "산책 흐름이 먼저예요. 다음 미션으로 이어갑니다.",
+      });
+      return;
+    }
+
+    toast.info("오늘의 미션 제안을 모두 지나왔어요", {
+      description: "그만 걷고 싶으면 결과를 저장해도 됩니다.",
     });
   };
 
@@ -324,8 +597,10 @@ const HomePage = () => {
         imageKey: uploaded.key,
       });
       toast.success("사진 미션이 인증됐어요", {
-        description: "AI 판정 준비 상태가 없으면 안전하게 fallback 인증으로 저장됩니다.",
+        description: "친구에게 보여줄 산책 스토리 proof로 저장됩니다.",
       });
+      setLastCompletedStamp(mission.stampReward);
+      goNextMission();
     } finally {
       setUploadingMissionId(null);
     }
@@ -347,6 +622,8 @@ const HomePage = () => {
     });
     setTextProofs((prev) => ({ ...prev, [mission.id as number]: "" }));
     toast.success("기록 미션이 인증됐어요");
+    setLastCompletedStamp(mission.stampReward);
+    goNextMission();
   };
 
   const handleSessionProof = async (mission: SessionMissionData) => {
@@ -358,6 +635,8 @@ const HomePage = () => {
       text: "오늘의 산책 세션 기록으로 인증",
     });
     toast.success("세션 미션이 인증됐어요");
+    setLastCompletedStamp(mission.stampReward);
+    goNextMission();
   };
 
   const handleExchangeCoupon = async () => {
@@ -365,22 +644,92 @@ const HomePage = () => {
     toast.success("친구추가 쿠폰 1장을 교환했어요");
   };
 
+  const renderMissionAction = (mission: SessionMissionData, compact = false) => {
+    const completed = mission.status === "completed";
+    const disabled = !isLoggedIn || !activeToday.sessionId || completed;
+
+    if (completed) {
+      return (
+        <div className="rounded-xl bg-success/10 px-3 py-2 text-[12px] font-extrabold text-success">
+          인증 완료 · {mission.stampReward}
+        </div>
+      );
+    }
+
+    if (mission.proofType === "photo" || mission.proofType === "screenshot") {
+      return (
+        <label
+          className={`pressable inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-foreground py-3 text-[13px] font-extrabold text-background ${
+            disabled ? "pointer-events-none opacity-50" : ""
+          }`}
+        >
+          {uploadingMissionId === mission.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+          {compact ? "사진 인증" : "사진으로 인증하기"}
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            disabled={disabled}
+            onChange={(event) => void handleMissionFile(mission, event.target.files?.[0])}
+          />
+        </label>
+      );
+    }
+
+    if (mission.proofType === "text" || mission.proofType === "social") {
+      return (
+        <div className="space-y-2">
+          <textarea
+            value={mission.id ? textProofs[mission.id] ?? "" : ""}
+            onChange={(event) => mission.id && setTextProofs((prev) => ({ ...prev, [mission.id as number]: event.target.value }))}
+            disabled={disabled}
+            maxLength={160}
+            className="min-h-20 w-full resize-none rounded-xl border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary"
+            placeholder="오늘 산책에서 좋았던 장면을 한 줄로 남겨보세요"
+          />
+          <button
+            type="button"
+            disabled={disabled || submitProof.isPending}
+            onClick={() => void handleTextProof(mission)}
+            className="pressable inline-flex w-full items-center justify-center gap-2 rounded-xl bg-foreground py-3 text-[13px] font-extrabold text-background disabled:opacity-50"
+          >
+            기록으로 인증하기
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        disabled={disabled || submitProof.isPending}
+        onClick={() => void handleSessionProof(mission)}
+        className="pressable inline-flex w-full items-center justify-center gap-2 rounded-xl bg-foreground py-3 text-[13px] font-extrabold text-background disabled:opacity-50"
+      >
+        {submitProof.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
+        세션 기록으로 인증하기
+      </button>
+    );
+  };
+
+  const allMissionsPassed = missionIndex >= visibleMissions.length - 1 && Boolean(currentMission && (currentMission.status === "completed" || skippedMissionKeys.includes(currentMission.missionKey)));
+
   return (
     <AppLayout>
-      <div className="relative min-h-[20rem] overflow-hidden">
-        <img src={cityTokyoImg} alt="오늘의 산책 여행" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/5" />
-        <div className="relative flex min-h-[20rem] flex-col justify-end px-4 pb-8 pt-16 text-white">
+      <div className="relative min-h-[18rem] overflow-hidden">
+        <img src={cityTokyoImg} alt="오늘의 여행 산책" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/10" />
+        <div className="relative flex min-h-[18rem] flex-col justify-end px-4 pb-7 pt-14 text-white">
           <motion.div {...fade(0)}>
             <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-[11px] font-bold backdrop-blur">
-              <Sparkles className="h-3.5 w-3.5" />
-              walk/run session passport
+              <Plane className="h-3.5 w-3.5" />
+              오늘 여행 인덱스
             </div>
-            <h1 className="max-w-[19rem] text-3xl font-extrabold leading-tight">
-              오늘 1km를 작은 여행으로 바꾸세요
+            <h1 className="max-w-[20rem] text-3xl font-extrabold leading-tight">
+              {activeToday.countryFlag} {activeToday.cityName}로 떠나는 오늘 산책
             </h1>
-            <p className="mt-3 max-w-[21rem] text-[13px] leading-6 text-white/80">
-              산책을 시작하면 GPS 기록, 기분 좋은 사진 미션, 티켓과 스탬프, 친구에게 보여줄 스토리가 함께 열립니다.
+            <p className="mt-3 max-w-[22rem] text-[13px] leading-6 text-white/80">
+              1km 게이지를 채우고, 5개의 가벼운 proof 미션으로 티켓과 스탬프를 모아요.
             </p>
           </motion.div>
         </div>
@@ -389,56 +738,65 @@ const HomePage = () => {
       <div className="relative z-10 -mt-5 space-y-4 px-4">
         <motion.section {...fade(0.08)} className="rounded-2xl bg-card p-4 shadow-elevated">
           <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-bold text-primary">{activeToday.countryFlag} {activeToday.cityName} 오늘의 목표</p>
-              <h2 className="mt-1 text-2xl font-extrabold text-card-foreground">
-                {formatMeters(activeToday.progressMeters)}
-                <span className="text-base text-muted-foreground"> / {formatMeters(activeToday.dailyGoalMeters)}</span>
+            <div className="min-w-0">
+              <p className="text-[11px] font-extrabold text-primary">오늘의 목적지</p>
+              <h2 className="mt-1 truncate text-2xl font-extrabold text-card-foreground">
+                {activeToday.countryFlag} {profile.arrivalName}
               </h2>
+              <p className="mt-1 line-clamp-2 text-[11px] leading-5 text-muted-foreground">{profile.countryLine}</p>
             </div>
-            <div className="rounded-2xl bg-primary/10 px-3 py-2 text-right">
+            <div className="shrink-0 rounded-2xl bg-primary/10 px-3 py-2 text-right">
               <p className="font-num text-xl font-extrabold text-primary">{activeToday.progressPercent}%</p>
-              <p className="text-[10px] font-bold text-muted-foreground">게이지</p>
+              <p className="text-[10px] font-bold text-muted-foreground">오늘 게이지</p>
             </div>
           </div>
 
-          <div className="mt-4 h-4 overflow-hidden rounded-full bg-secondary">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-primary via-ocean to-accent transition-all duration-500"
-              style={{ width: `${Math.min(100, activeToday.progressPercent)}%` }}
-            />
+          <div className="mt-4">
+            <div className="mb-2 flex items-end justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-bold text-muted-foreground">오늘 목표 1km</p>
+                <p className="font-num text-2xl font-extrabold text-foreground">
+                  {formatMeters(activeToday.progressMeters)}
+                  <span className="text-sm text-muted-foreground"> / {formatMeters(activeToday.dailyGoalMeters)}</span>
+                </p>
+              </div>
+              <p className="rounded-full bg-secondary px-3 py-1 text-[11px] font-bold text-muted-foreground">
+                미션 보너스 +{formatMeters(activeToday.bonusMeters)}
+              </p>
+            </div>
+            <div className="h-4 overflow-hidden rounded-full bg-secondary">
+              <div
+                className={`h-full rounded-full bg-gradient-to-r ${profile.accent} transition-all duration-500`}
+                style={{ width: `${Math.min(100, activeToday.progressPercent)}%` }}
+              />
+            </div>
           </div>
 
           <div className="mt-4 grid grid-cols-3 gap-2">
             <div className="rounded-xl bg-secondary/75 p-3">
               <Route className="mb-2 h-4 w-4 text-ocean" />
               <p className="font-num text-lg font-extrabold">{formatMeters(activeToday.distanceMeters)}</p>
-              <p className="text-[10px] text-muted-foreground">GPS 거리</p>
-            </div>
-            <div className="rounded-xl bg-secondary/75 p-3">
-              <Stamp className="mb-2 h-4 w-4 text-accent" />
-              <p className="font-num text-lg font-extrabold">+{formatMeters(activeToday.bonusMeters)}</p>
-              <p className="text-[10px] text-muted-foreground">미션 보너스</p>
+              <p className="text-[10px] text-muted-foreground">오늘 거리</p>
             </div>
             <div className="rounded-xl bg-secondary/75 p-3">
               <Timer className="mb-2 h-4 w-4 text-primary" />
               <p className="font-num text-lg font-extrabold">{formatDuration(elapsedSeconds)}</p>
               <p className="text-[10px] text-muted-foreground">산책 시간</p>
             </div>
+            <div className="rounded-xl bg-secondary/75 p-3">
+              <Stamp className="mb-2 h-4 w-4 text-accent" />
+              <p className="font-num text-lg font-extrabold">{completedMissionCount}/5</p>
+              <p className="text-[10px] text-muted-foreground">미션 완료</p>
+            </div>
+          </div>
+
+          <div className="mt-4 flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2">
+            <LocateFixed className="h-4 w-4 shrink-0 text-primary" />
+            <p className="text-[11px] leading-5 text-muted-foreground">{gpsStatus}</p>
           </div>
 
           <div className="mt-4 flex gap-2">
-            {isActive ? (
-              <button
-                type="button"
-                onClick={() => void handleFinish()}
-                disabled={finishSession.isPending}
-                className="pressable inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-foreground py-3 text-[13px] font-extrabold text-background disabled:opacity-60"
-              >
-                {finishSession.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CircleStop className="h-4 w-4" />}
-                산책 종료하고 결과 보기
-              </button>
-            ) : isFinished ? (
+            {isFinished ? (
               <button
                 type="button"
                 onClick={() => navigate("/profile")}
@@ -454,30 +812,69 @@ const HomePage = () => {
                 disabled={startSession.isPending}
                 className="pressable inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-foreground py-3 text-[13px] font-extrabold text-background disabled:opacity-60"
               >
-                {startSession.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4 fill-current" />}
-                오늘의 산책 시작하기
+                {startSession.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : isActive ? <Play className="h-4 w-4 fill-current" /> : <Plane className="h-4 w-4" />}
+                {isActive ? "여행 계속하기" : "오늘의 산책 시작하기"}
               </button>
             )}
             <a
-              href={activeToday.playlistUrl}
+              href={profile.musicUrl}
               target="_blank"
               rel="noreferrer"
               className="pressable inline-flex w-12 items-center justify-center rounded-xl bg-secondary text-foreground"
-              aria-label="플레이리스트 열기"
-              title="플레이리스트 열기"
+              aria-label="산책 음악 열기"
+              title={profile.musicLabel}
             >
               <Headphones className="h-5 w-5" />
             </a>
           </div>
+        </motion.section>
 
-          <div className="mt-3 flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2">
-            <LocateFixed className="h-4 w-4 shrink-0 text-primary" />
-            <p className="text-[11px] leading-5 text-muted-foreground">{gpsStatus}</p>
+        <motion.section {...fade(0.14)} className="rounded-2xl bg-card p-4 shadow-card">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-bold text-primary">오늘 미션</p>
+              <h2 className="text-lg font-extrabold text-card-foreground">{missionProgressLabel}</h2>
+            </div>
+            <div className="rounded-full bg-secondary px-3 py-1 text-[11px] font-bold text-muted-foreground">
+              건너뜀 {skippedMissionCount}
+            </div>
+          </div>
+
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {visibleMissions.map((mission, index) => {
+              const completed = mission.status === "completed";
+              const skipped = skippedMissionKeys.includes(mission.missionKey);
+              return (
+                <button
+                  key={mission.missionKey}
+                  type="button"
+                  onClick={() => {
+                    setMissionIndex(index);
+                    if (isActive) setTravelStage("mission");
+                  }}
+                  className={`h-20 w-[4.8rem] shrink-0 rounded-xl border px-2 py-2 text-left transition ${
+                    completed
+                      ? "border-success/30 bg-success/10 text-success"
+                      : skipped
+                        ? "border-border bg-muted text-muted-foreground"
+                        : "border-border bg-secondary/70 text-foreground"
+                  }`}
+                  aria-label={`${index + 1}번 미션 ${mission.title}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg">{mission.emoji}</span>
+                    {completed ? <Check className="h-4 w-4" /> : skipped ? <X className="h-4 w-4" /> : <span className="font-num text-[11px] font-bold">{index + 1}</span>}
+                  </div>
+                  <p className="mt-2 truncate text-[11px] font-extrabold">{getMissionCopy(mission, profile, activeToday.cityName).title}</p>
+                  <p className="mt-0.5 text-[10px] font-bold opacity-70">{proofLabel[mission.proofType]}</p>
+                </button>
+              );
+            })}
           </div>
         </motion.section>
 
         {isFinished && (
-          <motion.section {...fade(0.12)} className="rounded-2xl bg-card p-4 shadow-card">
+          <motion.section {...fade(0.18)} className="rounded-2xl bg-card p-4 shadow-card">
             <p className="text-[11px] font-bold text-primary">오늘의 결과</p>
             <h2 className="mt-1 text-lg font-extrabold text-card-foreground">
               {activeToday.status === "completed" ? "목표를 채운 여행" : "중간에 멈춘 여행도 기록됐어요"}
@@ -501,104 +898,6 @@ const HomePage = () => {
             </div>
           </motion.section>
         )}
-
-        <motion.section {...fade(0.16)} className="rounded-2xl bg-card p-4 shadow-card">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-bold text-primary">오늘 가능한 미션 5개</p>
-              <h2 className="text-lg font-extrabold text-card-foreground">{completedMissionCount}/5개 완료</h2>
-            </div>
-            <div className="rounded-full bg-secondary px-3 py-1 text-[11px] font-bold text-muted-foreground">
-              선택 미션
-            </div>
-          </div>
-
-          <div className="space-y-2.5">
-            {activeToday.missions.slice(0, 5).map((mission) => {
-              const completed = mission.status === "completed";
-              const disabled = !isLoggedIn || !activeToday.sessionId || completed;
-              return (
-                <div key={mission.missionKey} className="rounded-xl border border-border bg-background p-3">
-                  <div className="flex items-start gap-3">
-                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${completed ? "bg-success text-success-foreground" : "bg-secondary"}`}>
-                      {completed ? <Check className="h-5 w-5" /> : <span className="text-lg">{mission.emoji}</span>}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-                          {proofLabel[mission.proofType]} proof
-                        </span>
-                        <span className="rounded-full bg-gold/10 px-2 py-0.5 text-[10px] font-bold text-gold">
-                          +{mission.bonusMeters}m
-                        </span>
-                      </div>
-                      <p className="mt-1.5 text-sm font-extrabold text-foreground">{mission.title}</p>
-                      <p className="mt-0.5 text-[11px] leading-5 text-muted-foreground">{mission.description}</p>
-                      {mission.status === "completed" && (
-                        <p className="mt-1 text-[11px] font-bold text-success">
-                          {mission.verificationStatus === "fallback_accepted" ? "사진 제출 기반 인증 완료" : "인증 완료"} · {mission.stampReward}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {!completed && (
-                    <div className="mt-3">
-                      {(mission.proofType === "photo" || mission.proofType === "screenshot") && (
-                        <label className={`pressable inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-foreground py-2.5 text-[12px] font-bold text-background ${disabled ? "pointer-events-none opacity-50" : ""}`}>
-                          {uploadingMissionId === mission.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                          사진으로 인증하기
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            disabled={disabled}
-                            onChange={(event) => void handleMissionFile(mission, event.target.files?.[0])}
-                          />
-                        </label>
-                      )}
-
-                      {(mission.proofType === "text" || mission.proofType === "social") && (
-                        <div className="space-y-2">
-                          <textarea
-                            value={mission.id ? textProofs[mission.id] ?? "" : ""}
-                            onChange={(event) =>
-                              mission.id && setTextProofs((prev) => ({ ...prev, [mission.id as number]: event.target.value }))
-                            }
-                            disabled={disabled}
-                            maxLength={160}
-                            className="min-h-20 w-full resize-none rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary"
-                            placeholder="오늘 산책에서 좋았던 장면을 한 줄로 남겨보세요"
-                          />
-                          <button
-                            type="button"
-                            disabled={disabled || submitProof.isPending}
-                            onClick={() => void handleTextProof(mission)}
-                            className="pressable inline-flex w-full items-center justify-center gap-2 rounded-lg bg-foreground py-2.5 text-[12px] font-bold text-background disabled:opacity-50"
-                          >
-                            기록으로 인증하기
-                          </button>
-                        </div>
-                      )}
-
-                      {mission.proofType === "session" && (
-                        <button
-                          type="button"
-                          disabled={disabled || submitProof.isPending}
-                          onClick={() => void handleSessionProof(mission)}
-                          className="pressable inline-flex w-full items-center justify-center gap-2 rounded-lg bg-foreground py-2.5 text-[12px] font-bold text-background disabled:opacity-50"
-                        >
-                          <Navigation className="h-4 w-4" />
-                          세션 기록으로 인증하기
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </motion.section>
 
         <motion.section {...fade(0.22)} className="rounded-2xl bg-card p-4 shadow-card">
           <div className="flex items-center justify-between gap-3">
@@ -654,7 +953,7 @@ const HomePage = () => {
               <div className="flex items-start gap-3">
                 <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                 <p className="text-[12px] leading-5 text-muted-foreground">
-                  사진 미션을 완료하면 친구에게만 보이는 산책 스토리로 남습니다. 아직 친구 스토리가 없다면 오늘 첫 proof를 만들어보세요.
+                  사진 미션을 완료하면 친구에게만 보이는 산책 스토리로 남습니다. 오늘의 proof를 만들고 여권에 붙일 장면을 남겨보세요.
                 </p>
               </div>
             </div>
@@ -669,14 +968,216 @@ const HomePage = () => {
             className="pressable flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3.5 text-[13px] font-extrabold text-primary-foreground shadow-glow"
           >
             <LogIn className="h-4 w-4" />
-            내 여권으로 오늘 산책 시작하기
+            내 여권으로 여행 시작하기
           </motion.button>
         )}
 
         <p className="px-2 pb-2 text-center text-[10px] leading-5 text-muted-foreground">
-          GPS가 불안정하면 사진, 기록, 외부 앱 스크린샷 proof로도 오늘의 여행을 완성할 수 있어요.
+          자동 걸음 수가 없어도 괜찮아요. GPS, 사진, 기록, 외부 앱 스크린샷 proof로 오늘의 여행을 완성할 수 있습니다.
         </p>
       </div>
+
+      {showResumePrompt && (
+        <div className="fixed inset-x-0 bottom-[calc(var(--app-bottom-nav-height)+0.75rem)] z-[90] mx-auto w-full max-w-lg px-4">
+          <div className="rounded-2xl border border-border bg-card p-4 shadow-elevated">
+            <p className="text-[11px] font-bold text-primary">잠시 멈춘 여행</p>
+            <h2 className="mt-1 text-lg font-extrabold text-card-foreground">이전 미션을 유지하시겠습니까?</h2>
+            <p className="mt-1 text-[12px] leading-5 text-muted-foreground">오늘 끝내지 않은 세션이 있어요. 같은 목적지와 미션 순서로 이어갈 수 있습니다.</p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setShowResumePrompt(false)}
+                className="pressable rounded-xl bg-secondary py-3 text-[13px] font-extrabold text-foreground"
+              >
+                나중에
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleStart()}
+                className="pressable rounded-xl bg-foreground py-3 text-[13px] font-extrabold text-background"
+              >
+                이어가기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {travelStage !== "home" && (
+        <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/55 px-4 py-6 backdrop-blur-sm">
+          <motion.div
+            key={travelStage}
+            initial={{ opacity: 0, y: 18, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 18, scale: 0.98 }}
+            className="relative w-full max-w-lg overflow-hidden rounded-2xl bg-background shadow-elevated"
+          >
+            <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${profile.accent}`} />
+
+            {travelStage === "departing" && (
+              <div className="min-h-[31rem] px-5 py-6">
+                <div className="mb-6 flex items-center justify-between">
+                  <p className="rounded-full bg-secondary px-3 py-1 text-[11px] font-bold text-muted-foreground">walk2world air</p>
+                  <button type="button" onClick={handlePause} className="rounded-full bg-secondary p-2 text-muted-foreground" aria-label="여행 닫기">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="relative h-48 overflow-hidden rounded-2xl bg-gradient-to-br from-ocean/20 via-card to-gold/20">
+                  <div className="absolute left-8 right-8 top-1/2 h-0.5 border-t border-dashed border-primary/35" />
+                  <motion.div
+                    className="absolute left-4 top-[42%] flex h-14 w-14 items-center justify-center rounded-full bg-foreground text-background shadow-elevated"
+                    animate={{ x: [0, 250], y: [0, -20, 2], rotate: [0, 10, 0] }}
+                    transition={{ duration: 1.35, ease: "easeInOut", repeat: Infinity }}
+                  >
+                    <Plane className="h-7 w-7" />
+                  </motion.div>
+                  <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between text-[11px] font-extrabold text-muted-foreground">
+                    <span>내 동네</span>
+                    <span>{profile.arrivalName}</span>
+                  </div>
+                </div>
+                <div className="mt-6">
+                  <p className="text-[12px] font-extrabold text-primary">여행 출발 중</p>
+                  <h2 className="mt-2 text-3xl font-extrabold leading-tight text-foreground">산책길 공항에서 이륙합니다</h2>
+                  <p className="mt-3 text-[13px] leading-6 text-muted-foreground">
+                    GPS를 켜고, 짧은 여행 사운드를 재생했어요. 잠시 후 오늘의 목적지에 도착합니다.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {travelStage === "arrived" && (
+              <div className="min-h-[31rem] px-5 py-6">
+                <div className="mb-5 flex items-center justify-between">
+                  <div className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-extrabold text-primary">{activeToday.countryFlag} ARRIVED</div>
+                  <a
+                    href={profile.musicUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-[11px] font-bold text-foreground"
+                  >
+                    <Headphones className="h-3.5 w-3.5" />
+                    음악
+                  </a>
+                </div>
+                <div className={`rounded-2xl bg-gradient-to-br ${profile.accent} p-5 text-white`}>
+                  <p className="text-[12px] font-extrabold text-white/80">오늘의 여행지</p>
+                  <h2 className="mt-2 text-3xl font-extrabold leading-tight">{profile.arrivalName}에 도착했어요</h2>
+                  <p className="mt-3 text-[13px] leading-6 text-white/85">{profile.countryLine}</p>
+                </div>
+                <div className="mt-4 rounded-2xl bg-card p-4 shadow-card">
+                  <p className="text-[11px] font-bold text-primary">도착 브리핑</p>
+                  <p className="mt-2 min-h-[3rem] text-[14px] font-extrabold leading-6 text-foreground">{profile.facts[factIndex]}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setTravelStage("mission")}
+                  className="pressable mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-foreground py-3 text-[13px] font-extrabold text-background"
+                >
+                  미션 시작하기
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+
+            {travelStage === "mission" && currentMission && currentMissionCopy && (
+              <div className="max-h-[88vh] overflow-y-auto px-5 py-6">
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-extrabold text-primary">{profile.arrivalName} 여행 미션</p>
+                    <h2 className="mt-1 text-2xl font-extrabold leading-tight text-foreground">미션 {missionIndex + 1} / 5</h2>
+                  </div>
+                  <button type="button" onClick={handlePause} className="rounded-full bg-secondary p-2 text-muted-foreground" aria-label="잠시 멈추기">
+                    <Pause className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="mb-4 flex gap-1.5">
+                  {visibleMissions.map((mission, index) => {
+                    const isDone = mission.status === "completed";
+                    const isSkipped = skippedMissionKeys.includes(mission.missionKey);
+                    return (
+                      <div
+                        key={mission.missionKey}
+                        className={`h-2 flex-1 rounded-full ${
+                          isDone ? "bg-success" : isSkipped ? "bg-muted-foreground/30" : index === missionIndex ? "bg-primary" : "bg-secondary"
+                        }`}
+                      />
+                    );
+                  })}
+                </div>
+
+                <div className="rounded-2xl bg-card p-4 shadow-card">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-secondary text-2xl">{currentMission.emoji}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                          {proofLabel[currentMission.proofType]} proof
+                        </span>
+                        <span className="rounded-full bg-gold/10 px-2 py-0.5 text-[10px] font-bold text-gold">
+                          +{currentMission.bonusMeters}m
+                        </span>
+                      </div>
+                      <h3 className="mt-2 text-xl font-extrabold text-foreground">{currentMissionCopy.title}</h3>
+                      <p className="mt-2 text-[13px] leading-6 text-muted-foreground">{currentMissionCopy.prompt}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-xl bg-secondary/70 px-3 py-2">
+                    <p className="text-[11px] font-bold text-muted-foreground">
+                      현재 게이지 {formatMeters(activeToday.progressMeters)} / {formatMeters(activeToday.dailyGoalMeters)} · {missionProgressLabel}
+                    </p>
+                  </div>
+
+                  {lastCompletedStamp && (
+                    <div className="mt-3 rounded-xl bg-success/10 px-3 py-2 text-[12px] font-extrabold text-success">
+                      인증 완료 · {lastCompletedStamp}
+                    </div>
+                  )}
+
+                  <div className="mt-4">{renderMissionAction(currentMission)}</div>
+                </div>
+
+                {allMissionsPassed && (
+                  <div className="mt-3 rounded-2xl bg-success/10 p-4">
+                    <p className="text-[12px] font-extrabold text-success">오늘의 여행 미션을 모두 지나왔어요</p>
+                    <p className="mt-1 text-[12px] leading-5 text-muted-foreground">더 걸어도 좋고, 지금까지 기록으로 결과를 받을 수도 있어요.</p>
+                  </div>
+                )}
+
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSkipMission}
+                    className="pressable rounded-xl bg-secondary py-3 text-[13px] font-extrabold text-foreground"
+                  >
+                    미션 넘어가기
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleFinish()}
+                    disabled={finishSession.isPending || !activeToday.sessionId}
+                    className="pressable inline-flex items-center justify-center gap-2 rounded-xl bg-foreground py-3 text-[13px] font-extrabold text-background disabled:opacity-50"
+                  >
+                    {finishSession.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CircleStop className="h-4 w-4" />}
+                    오늘 산책 끝내기
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handlePause}
+                  className="pressable mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card py-3 text-[13px] font-extrabold text-foreground"
+                >
+                  <Pause className="h-4 w-4" />
+                  중지하고 나가기
+                </button>
+              </div>
+            )}
+          </motion.div>
+        </div>
+      )}
     </AppLayout>
   );
 };

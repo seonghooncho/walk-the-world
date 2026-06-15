@@ -118,7 +118,7 @@ const mockApi = async (page: Page, options: { initialFriend?: boolean } = {}) =>
     stampsEarned: 0,
     environmentHint: "city",
     playlistTitle: "오늘의 산책 플레이리스트",
-    playlistUrl: "https://www.youtube.com/results?search_query=walking+playlist",
+    playlistUrl: "https://pixabay.com/music/search/travel%20walk/",
     startedAt: null as string | null,
     endedAt: null as string | null,
     missions: [
@@ -536,10 +536,11 @@ test("guest can preview journey and map without login", async ({ page }) => {
   await mockApi(page);
   await page.goto("/");
 
-  await expect(page.getByText("오늘 1km를 작은 여행으로 바꾸세요")).toBeVisible();
+  await expect(page.getByText("오늘 여행 인덱스")).toBeVisible();
+  await expect(page.getByText("서울로 떠나는 오늘 산책")).toBeVisible();
   await expect(page.getByText("오늘의 산책 시작하기")).toBeVisible();
-  await expect(page.getByText("오늘 가능한 미션 5개")).toBeVisible();
-  await expect(page.getByText("내 여권으로 오늘 산책 시작하기")).toBeVisible();
+  await expect(page.getByText("오늘 미션")).toBeVisible();
+  await expect(page.getByText("내 여권으로 여행 시작하기")).toBeVisible();
 
   await page.getByRole("button", { name: "여권지도" }).click();
   await expect(page.getByText("다음 여권 페이지")).toBeVisible();
@@ -561,20 +562,20 @@ test("daily session starts with GPS, completes a mission, and awards partial res
   await mockApi(page);
   await page.goto("/");
 
-  await expect(page.getByText("오늘 1km를 작은 여행으로 바꾸세요")).toBeVisible();
-  const popupPromise = page.waitForEvent("popup", { timeout: 3000 }).catch(() => null);
+  await expect(page.getByText("오늘 여행 인덱스")).toBeVisible();
   await page.getByRole("button", { name: "오늘의 산책 시작하기" }).click();
-  const popup = await popupPromise;
-  await popup?.close();
 
-  await expect(page.getByRole("button", { name: "산책 종료하고 결과 보기" })).toBeVisible();
+  await expect(page.getByText("여행 출발 중")).toBeVisible();
+  await expect(page.getByText("도쿄에 도착했어요")).toBeVisible({ timeout: 5000 });
+  await expect(page.getByText("도쿄 여행 미션")).toBeVisible({ timeout: 5000 });
   await expect(page.getByText(/GPS 기록 중|GPS 연결됨/)).toBeVisible();
 
+  await page.getByRole("button", { name: "미션 넘어가기" }).click();
   await page.getByRole("button", { name: "세션 기록으로 인증하기" }).click();
-  await expect(page.getByText("1/5개 완료")).toBeVisible();
+  await expect(page.getByText("현재 게이지 600m / 1.00km · 1/5개 완료")).toBeVisible();
   await expect(page.getByText("인증 완료 · 꾸준함 스탬프")).toBeVisible();
 
-  await page.getByRole("button", { name: "산책 종료하고 결과 보기" }).click();
+  await page.getByRole("button", { name: "오늘 산책 끝내기" }).click();
   await expect(page.getByText("오늘의 결과")).toBeVisible();
   await expect(page.getByText("중간에 멈춘 여행도 기록됐어요")).toBeVisible();
   await expect(page.getByText("획득 티켓")).toBeVisible();
