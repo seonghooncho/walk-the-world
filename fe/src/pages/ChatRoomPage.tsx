@@ -157,7 +157,7 @@ const ChatRoomPage = () => {
                   >
                     <div className={`flex max-w-[75%] items-end gap-1.5 ${isMine ? "flex-row-reverse" : ""}`}>
                       <div
-                        className={`rounded-2xl px-3.5 py-2.5 text-sm ${
+                        className={`whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2.5 text-sm ${
                           isMine
                             ? "rounded-br-md bg-primary text-primary-foreground"
                             : "rounded-bl-md bg-muted text-foreground"
