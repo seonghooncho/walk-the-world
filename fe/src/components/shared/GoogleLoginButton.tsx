@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { useGoogleLogin } from "@/hooks/useApi";
+import { trackEvent } from "@/lib/analytics";
 import { toast } from "sonner";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
@@ -28,6 +29,7 @@ const GoogleLoginButton = ({ onSuccess }: Props) => {
         const result = await googleLogin.mutateAsync(response.credential);
         setStatus("여권 정보를 여는 중");
         toast.success(result.restored ? "계정이 복구되었습니다" : "구글 로그인 성공!");
+        trackEvent("login", { method: "google", restored: Boolean(result.restored) });
         await onSuccess();
       } catch (error: unknown) {
         toast.error(getErrorMessage(error));
