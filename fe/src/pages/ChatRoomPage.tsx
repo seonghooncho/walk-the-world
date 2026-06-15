@@ -33,7 +33,7 @@ const ChatRoomPage = () => {
   const markChatAsRead = useMarkChatAsRead();
 
   const room = listedRoom ?? directRoom;
-  const isResolvingRoom = !room && (isRoomsLoading || isDirectRoomLoading);
+  const roomLookupFailed = hasValidRoomId && !room && !isRoomsLoading && !isDirectRoomLoading;
   const friendId = room?.friendId ?? 0;
   const { data: friendProfile } = usePublicProfile(friendId);
   const messages = useMemo(
@@ -64,7 +64,7 @@ const ChatRoomPage = () => {
 
   const handleSend = async () => {
     const text = input.trim();
-    if (!text || !roomId || sendMessage.isPending) {
+    if (!text || !hasValidRoomId || sendMessage.isPending) {
       return;
     }
 
@@ -84,7 +84,7 @@ const ChatRoomPage = () => {
     );
   }
 
-  if (isResolvingRoom || !user) {
+  if (!user) {
     return (
       <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center bg-background">
         <LoadingSpinner />
@@ -92,7 +92,7 @@ const ChatRoomPage = () => {
     );
   }
 
-  if (!room) {
+  if (!hasValidRoomId || roomLookupFailed) {
     return (
       <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center bg-background">
         <p className="text-muted-foreground">채팅방을 찾을 수 없어요</p>
@@ -129,15 +129,21 @@ const ChatRoomPage = () => {
     return getTimeKey(current) !== getTimeKey(next);
   };
 
+  const chatTitle = room?.friendName ?? "채팅방 불러오는 중";
+
   return (
     <div className="mx-auto flex min-h-screen max-w-lg flex-col bg-background">
       <div className="flex items-center gap-3 border-b border-border bg-card px-3 pb-3 pt-12">
         <button onClick={() => navigate("/feed")} className="rounded-full p-1.5 hover:bg-muted">
           <ArrowLeft className="h-5 w-5 text-foreground" />
         </button>
-        <button onClick={() => setShowProfile(true)} className="flex items-center gap-2.5">
-          <UserAvatar name={room.friendName} avatar={room.friendAvatar ?? undefined} size="md" showOnline />
-          <span className="text-sm font-semibold text-foreground">{room.friendName}</span>
+        <button
+          onClick={() => room && setShowProfile(true)}
+          disabled={!room}
+          className="flex items-center gap-2.5 text-left disabled:cursor-default"
+        >
+          <UserAvatar name={chatTitle} avatar={room?.friendAvatar ?? undefined} size="md" showOnline={!!room} />
+          <span className="text-sm font-semibold text-foreground">{chatTitle}</span>
         </button>
       </div>
 
@@ -226,7 +232,7 @@ const ChatRoomPage = () => {
           <button
             type="button"
             onClick={() => void handleSend()}
-            disabled={!input.trim() || sendMessage.isPending}
+            disabled={!input.trim() || sendMessage.isPending || !hasValidRoomId}
             className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-opacity disabled:opacity-40"
             aria-label="메시지 보내기"
           >

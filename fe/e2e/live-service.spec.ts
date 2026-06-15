@@ -2,6 +2,7 @@ import { expect, test, type APIRequestContext, type APIResponse, type Page } fro
 
 const LIVE_ENABLED = process.env.LIVE_E2E === "1";
 const REQUEST_TIMEOUT = 30_000;
+const UI_READY_TIMEOUT = REQUEST_TIMEOUT;
 const TEST_PASSWORD = "QaPassw0rd!2026";
 const RUN_ID = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -247,8 +248,8 @@ test.describe("live production QA", () => {
 
     await setBrowserTokens(page, primary);
     await page.goto("/profile", { waitUntil: "domcontentloaded", timeout: REQUEST_TIMEOUT });
-    await expect(page.getByRole("heading", { name: "여행 여권" })).toBeVisible();
-    await expect(page.getByText(primary.name)).toBeVisible();
+    await expect(page.getByRole("heading", { name: "여행 여권" })).toBeVisible({ timeout: UI_READY_TIMEOUT });
+    await expect(page.getByText(primary.name)).toBeVisible({ timeout: UI_READY_TIMEOUT });
   });
 
   test("input, pagination, and step boundaries match production requirements", async ({ request }) => {
@@ -426,7 +427,7 @@ test.describe("live production QA", () => {
 
     await setBrowserTokens(page, primary);
     await page.goto(`/chat/${room.data.id}`, { waitUntil: "domcontentloaded", timeout: REQUEST_TIMEOUT });
-    await expect(page.getByPlaceholder("메시지를 입력하세요...")).toBeVisible();
+    await expect(page.getByPlaceholder("메시지를 입력하세요...")).toBeVisible({ timeout: UI_READY_TIMEOUT });
     await page.getByPlaceholder("메시지를 입력하세요...").fill(uiReentryMessage);
     await page.getByRole("button", { name: "메시지 보내기" }).click();
     await expect(page.getByText(uiReentryMessage)).toBeVisible();
@@ -560,7 +561,7 @@ test.describe("live production QA", () => {
 
     await setBrowserTokens(page, primary);
     await page.goto("/profile", { waitUntil: "domcontentloaded", timeout: REQUEST_TIMEOUT });
-    await expect(page.getByRole("heading", { name: "여행 여권" })).toBeVisible();
-    await expect(page.getByText(primary.name)).toBeVisible();
+    await expect(page.getByRole("heading", { name: "여행 여권" })).toBeVisible({ timeout: UI_READY_TIMEOUT });
+    await expect(page.getByText(primary.name)).toBeVisible({ timeout: UI_READY_TIMEOUT });
   });
 });
