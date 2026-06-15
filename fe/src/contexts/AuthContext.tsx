@@ -18,8 +18,8 @@ interface AuthContextType {
   dismissLoginModal: () => void;
   /** 로그아웃: 토큰 삭제 + 쿼리 캐시 초기화 */
   logout: () => void;
-  /** 로그인 성공 후 호출 */
-  onLoginSuccess: () => void;
+  /** 로그인 성공 후 토큰 상태와 프로필 캐시를 동기화 */
+  onLoginSuccess: () => Promise<UserProfile | null>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -30,7 +30,7 @@ const AuthContext = createContext<AuthContextType>({
   requireLogin: () => {},
   dismissLoginModal: () => {},
   logout: () => {},
-  onLoginSuccess: () => {},
+  onLoginSuccess: async () => null,
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -86,11 +86,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setShowLoginModal(false);
   }, []);
 
-  const onLoginSuccess = useCallback(() => {
+  const onLoginSuccess = useCallback(async () => {
     setHasToken(isAuthenticated());
     setShowLoginModal(false);
     qc.invalidateQueries({ queryKey: ["me"] });
-    void refetch();
+    const result = await refetch();
+    if (result.error) {
+      throw result.error;
+    }
+    return result.data ?? null;
   }, [qc, refetch]);
 
   return (

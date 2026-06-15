@@ -1,16 +1,17 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { useGoogleLogin } from "@/hooks/useApi";
 import { toast } from "sonner";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
 interface Props {
-  onSuccess: () => void;
+  onSuccess: () => Promise<void>;
 }
 
 const GoogleLoginButton = ({ onSuccess }: Props) => {
   const btnRef = useRef<HTMLDivElement>(null);
   const googleLogin = useGoogleLogin();
+  const [status, setStatus] = useState<string | null>(null);
 
   const getErrorMessage = (error: unknown) => {
     return error instanceof Error ? error.message : "구글 로그인에 실패했습니다";
@@ -18,12 +19,21 @@ const GoogleLoginButton = ({ onSuccess }: Props) => {
 
   const handleCredentialResponse = useCallback(
     async (response: { credential: string }) => {
+      setStatus("Google 계정 확인 중");
+      const slowTimer = window.setTimeout(() => {
+        setStatus("응답이 느려요 · 로그인 토큰을 계속 확인하고 있습니다");
+      }, 3500);
+
       try {
         const result = await googleLogin.mutateAsync(response.credential);
+        setStatus("여권 정보를 여는 중");
         toast.success(result.restored ? "계정이 복구되었습니다" : "구글 로그인 성공!");
-        onSuccess();
+        await onSuccess();
       } catch (error: unknown) {
         toast.error(getErrorMessage(error));
+        setStatus(null);
+      } finally {
+        window.clearTimeout(slowTimer);
       }
     },
     [googleLogin, onSuccess]
@@ -78,7 +88,16 @@ const GoogleLoginButton = ({ onSuccess }: Props) => {
     );
   }
 
-  return <div ref={btnRef} className="w-full" />;
+  return (
+    <div className="space-y-2">
+      <div ref={btnRef} className="w-full" />
+      {status && (
+        <div className="rounded-xl bg-secondary px-3 py-2 text-center text-[12px] font-bold text-muted-foreground">
+          {status}
+        </div>
+      )}
+    </div>
+  );
 };
 
 // Type declaration for Google Identity Services

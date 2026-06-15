@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -7,9 +7,26 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import GoogleLoginButton from "@/components/shared/GoogleLoginButton";
 import KakaoLoginButton from "@/components/shared/KakaoLoginButton";
+import { ApiError } from "@/lib/api";
 import { isValidSignupPassword, normalizePassword, PASSWORD_RULE_MESSAGE } from "@/lib/password";
 
 type Mode = "login" | "signup";
+const AUTH_READY_TIMEOUT_MESSAGE = "AUTH_READY_TIMEOUT";
+
+const withAuthReadyTimeout = async <T,>(promise: Promise<T>, timeoutMs = 9000) => {
+  let timeoutId: number | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new Error(AUTH_READY_TIMEOUT_MESSAGE)), timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (timeoutId) {
+      window.clearTimeout(timeoutId);
+    }
+  }
+};
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -20,6 +37,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [showPw, setShowPw] = useState(false);
+  const [authStatus, setAuthStatus] = useState<string | null>(null);
 
   const login = useLogin();
   const signup = useSignup();
@@ -42,10 +60,43 @@ const LoginPage = () => {
   }, [location.search]);
 
   useEffect(() => {
-    if (isLoggedIn) {
+    if (isLoggedIn && !authStatus) {
       navigate(redirectPath, { replace: true });
     }
-  }, [isLoggedIn, navigate, redirectPath]);
+  }, [authStatus, isLoggedIn, navigate, redirectPath]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const error = params.get("error");
+    if (error) {
+      toast.error("소셜 로그인에 실패했습니다", {
+        description: "잠시 후 다시 시도하거나 이메일 로그인을 사용해주세요.",
+      });
+    }
+  }, [location.search]);
+
+  const completeAuthenticatedFlow = useCallback(async () => {
+    setAuthStatus("토큰 저장 완료 · 여권 정보를 확인하고 있어요");
+    try {
+      await withAuthReadyTimeout(onLoginSuccess());
+      setAuthStatus("여권 확인 완료 · 이동합니다");
+    } catch (error) {
+      if (error instanceof Error && error.message === AUTH_READY_TIMEOUT_MESSAGE) {
+        toast.info("로그인은 완료됐어요", {
+          description: "프로필 확인이 조금 늦어지고 있어 이동 후 다시 이어갑니다.",
+        });
+      } else {
+        setAuthStatus(null);
+        if (error instanceof ApiError && error.status === 401) {
+          toast.error("로그인 토큰이 만료됐거나 유효하지 않습니다");
+          return;
+        }
+        throw error;
+      }
+    }
+
+    navigate(redirectPath, { replace: true });
+  }, [navigate, onLoginSuccess, redirectPath]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,10 +118,10 @@ const LoginPage = () => {
         await signup.mutateAsync({ email: normalizedEmail, password: normalizedPassword, name: normalizedName });
         toast.success("회원가입 완료!");
       }
-      onLoginSuccess();
-      navigate(redirectPath, { replace: true });
+      await completeAuthenticatedFlow();
     } catch (error: unknown) {
       toast.error(getErrorMessage(error));
+      setAuthStatus(null);
     }
   };
 
@@ -188,8 +239,13 @@ const LoginPage = () => {
 
         {/* Social logins */}
         <div className="space-y-2.5">
-          <GoogleLoginButton onSuccess={onLoginSuccess} />
+          <GoogleLoginButton onSuccess={completeAuthenticatedFlow} />
           <KakaoLoginButton />
+          {authStatus && (
+            <div className="rounded-xl bg-primary/10 px-3 py-2 text-center text-[12px] font-bold text-primary">
+              {authStatus}
+            </div>
+          )}
         </div>
       </motion.div>
     </div>
