@@ -1,26 +1,34 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
+  ArrowLeft,
   Camera,
   Check,
   ChevronRight,
   CircleStop,
+  CloudSun,
   Gift,
   Headphones,
   Loader2,
+  Map,
   LocateFixed,
   LogIn,
   MapPin,
+  Music2,
   Navigation,
   Pause,
   Plane,
   Play,
   Route,
+  SkipBack,
+  SkipForward,
   Sparkles,
   Stamp,
   Ticket,
   Timer,
   Upload,
+  Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -56,7 +64,39 @@ const proofLabel: Record<SessionMissionData["proofType"], string> = {
   social: "소셜",
 };
 
+const makeTracks = (cityName: string, notes: number[], variant = 0): AmbientTrack[] => [
+  {
+    title: `${cityName} 출발 신호`,
+    mood: "가볍게 걷기",
+    notes,
+    tempoMs: 520 + variant * 30,
+    wave: "sine",
+  },
+  {
+    title: `${cityName} 골목 리듬`,
+    mood: "사진 미션 집중",
+    notes: [...notes.slice(1), notes[0] * 2],
+    tempoMs: 430 + variant * 25,
+    wave: "triangle",
+  },
+  {
+    title: `${cityName} 도착 라운지`,
+    mood: "천천히 마무리",
+    notes: [notes[0], notes[2] ?? notes[0], notes[1] ?? notes[0], notes[0]],
+    tempoMs: 690 + variant * 20,
+    wave: "sine",
+  },
+];
+
 type TravelStage = "home" | "departing" | "arrived" | "mission";
+
+interface AmbientTrack {
+  title: string;
+  mood: string;
+  notes: number[];
+  tempoMs: number;
+  wave: OscillatorType;
+}
 
 interface DestinationProfile {
   arrivalName: string;
@@ -65,12 +105,21 @@ interface DestinationProfile {
   musicLabel: string;
   musicUrl: string;
   notes: number[];
+  tracks: AmbientTrack[];
   accent: string;
 }
 
 interface MissionCopy {
   title: string;
   prompt: string;
+}
+
+interface WeatherSnapshot {
+  label: string;
+  temperatureC: number | null;
+  precipitationMm: number | null;
+  windSpeedKmh: number | null;
+  code: number | null;
 }
 
 const destinationProfiles: Record<string, DestinationProfile> = {
@@ -81,6 +130,7 @@ const destinationProfiles: Record<string, DestinationProfile> = {
     musicLabel: "저작권 안전 K-walk lo-fi",
     musicUrl: "https://pixabay.com/music/search/korea%20lofi/",
     notes: [523, 659, 784, 659],
+    tracks: makeTracks("서울", [523, 659, 784, 659]),
     accent: "from-primary via-ocean to-success",
   },
   tokyo: {
@@ -90,6 +140,7 @@ const destinationProfiles: Record<string, DestinationProfile> = {
     musicLabel: "저작권 안전 Tokyo city pop",
     musicUrl: "https://pixabay.com/music/search/japan%20city%20pop/",
     notes: [587, 740, 880, 740],
+    tracks: makeTracks("도쿄", [587, 740, 880, 740], 1),
     accent: "from-accent via-gold to-primary",
   },
   busan: {
@@ -99,6 +150,7 @@ const destinationProfiles: Record<string, DestinationProfile> = {
     musicLabel: "저작권 안전 seaside walk",
     musicUrl: "https://pixabay.com/music/search/seaside%20walk/",
     notes: [440, 554, 659, 554],
+    tracks: makeTracks("부산", [440, 554, 659, 554], 2),
     accent: "from-ocean via-primary to-gold",
   },
   osaka: {
@@ -108,6 +160,7 @@ const destinationProfiles: Record<string, DestinationProfile> = {
     musicLabel: "저작권 안전 Osaka groove",
     musicUrl: "https://pixabay.com/music/search/japan%20groove/",
     notes: [494, 622, 740, 622],
+    tracks: makeTracks("오사카", [494, 622, 740, 622], 1),
     accent: "from-gold via-accent to-primary",
   },
   paris: {
@@ -117,6 +170,7 @@ const destinationProfiles: Record<string, DestinationProfile> = {
     musicLabel: "저작권 안전 Paris walk",
     musicUrl: "https://pixabay.com/music/search/paris%20walk/",
     notes: [392, 494, 587, 494],
+    tracks: makeTracks("파리", [392, 494, 587, 494], 3),
     accent: "from-earth via-gold to-ocean",
   },
   london: {
@@ -126,6 +180,7 @@ const destinationProfiles: Record<string, DestinationProfile> = {
     musicLabel: "저작권 안전 London stroll",
     musicUrl: "https://pixabay.com/music/search/london%20stroll/",
     notes: [349, 440, 523, 440],
+    tracks: makeTracks("런던", [349, 440, 523, 440], 2),
     accent: "from-primary via-earth to-accent",
   },
   newyork: {
@@ -135,6 +190,7 @@ const destinationProfiles: Record<string, DestinationProfile> = {
     musicLabel: "저작권 안전 city running beat",
     musicUrl: "https://pixabay.com/music/search/city%20running/",
     notes: [659, 784, 988, 784],
+    tracks: makeTracks("뉴욕", [659, 784, 988, 784], 1),
     accent: "from-ocean via-accent to-gold",
   },
 };
@@ -146,6 +202,7 @@ const fallbackProfile = (cityName: string): DestinationProfile => ({
   musicLabel: "저작권 안전 travel walk",
   musicUrl: "https://pixabay.com/music/search/travel%20walk/",
   notes: [440, 523, 659, 523],
+  tracks: makeTracks(cityName, [440, 523, 659, 523]),
   accent: "from-primary via-ocean to-gold",
 });
 
@@ -268,32 +325,134 @@ const inferEnvironmentHint = (point?: GeoPointPayload) => {
   return "city-fallback";
 };
 
-const getMissionCopy = (mission: SessionMissionData, profile: DestinationProfile, cityName: string): MissionCopy => {
+const weatherLabelFromCode = (code: number | null) => {
+  if (code === null) return "날씨 확인 전";
+  if (code === 0) return "맑음";
+  if ([1, 2, 3].includes(code)) return "구름 조금";
+  if ([45, 48].includes(code)) return "안개";
+  if (code >= 51 && code <= 67) return "비";
+  if (code >= 71 && code <= 77) return "눈";
+  if (code >= 80 && code <= 82) return "소나기";
+  if (code >= 95) return "천둥";
+  return "변덕스러운 날씨";
+};
+
+const fetchWeatherSnapshot = async (point: GeoPointPayload): Promise<WeatherSnapshot | null> => {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 4500);
+  const params = new URLSearchParams({
+    latitude: String(point.latitude),
+    longitude: String(point.longitude),
+    current: "temperature_2m,precipitation,weather_code,wind_speed_10m",
+    timezone: "auto",
+  });
+
+  try {
+    const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`, { signal: controller.signal });
+    if (!response.ok) return null;
+    const body = (await response.json()) as {
+      current?: {
+        temperature_2m?: number;
+        precipitation?: number;
+        weather_code?: number;
+        wind_speed_10m?: number;
+      };
+    };
+    const current = body.current;
+    const code = typeof current?.weather_code === "number" ? current.weather_code : null;
+    return {
+      label: weatherLabelFromCode(code),
+      temperatureC: typeof current?.temperature_2m === "number" ? Math.round(current.temperature_2m) : null,
+      precipitationMm: typeof current?.precipitation === "number" ? current.precipitation : null,
+      windSpeedKmh: typeof current?.wind_speed_10m === "number" ? Math.round(current.wind_speed_10m) : null,
+      code,
+    };
+  } catch {
+    return null;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+};
+
+const isRainyWeather = (weather: WeatherSnapshot | null) =>
+  Boolean(weather && ((weather.code !== null && weather.code >= 51) || (weather.precipitationMm ?? 0) > 0));
+
+const isWindyWeather = (weather: WeatherSnapshot | null) => (weather?.windSpeedKmh ?? 0) >= 22;
+
+const routeSvgPoints = (points: GeoPointPayload[], width = 300, height = 140) => {
+  if (points.length < 2) return "";
+  const latitudes = points.map((point) => point.latitude);
+  const longitudes = points.map((point) => point.longitude);
+  const minLat = Math.min(...latitudes);
+  const maxLat = Math.max(...latitudes);
+  const minLng = Math.min(...longitudes);
+  const maxLng = Math.max(...longitudes);
+  const latRange = maxLat - minLat || 0.0001;
+  const lngRange = maxLng - minLng || 0.0001;
+  const padding = 18;
+
+  return points
+    .map((point) => {
+      const x = padding + ((point.longitude - minLng) / lngRange) * (width - padding * 2);
+      const y = height - padding - ((point.latitude - minLat) / latRange) * (height - padding * 2);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+};
+
+const routeMapUrl = (points: GeoPointPayload[]) => {
+  if (points.length < 2) return null;
+  const latitudes = points.map((point) => point.latitude);
+  const longitudes = points.map((point) => point.longitude);
+  const minLat = Math.min(...latitudes);
+  const maxLat = Math.max(...latitudes);
+  const minLng = Math.min(...longitudes);
+  const maxLng = Math.max(...longitudes);
+  const latPad = Math.max((maxLat - minLat) * 0.35, 0.003);
+  const lngPad = Math.max((maxLng - minLng) * 0.35, 0.003);
+  const bbox = [minLng - lngPad, minLat - latPad, maxLng + lngPad, maxLat + latPad].join(",");
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(bbox)}&layer=mapnik`;
+};
+
+const getMissionCopy = (
+  mission: SessionMissionData,
+  profile: DestinationProfile,
+  cityName: string,
+  weather: WeatherSnapshot | null,
+): MissionCopy => {
+  const weatherPrefix = weather ? `${weather.label} 날씨에 맞춰 ` : "";
+
   switch (mission.missionKey) {
     case "open_sky":
       return {
-        title: "도착 첫 하늘",
-        prompt: `${profile.arrivalName}에 막 도착한 느낌으로 뻥 뚫린 하늘을 한 장 남겨보세요.`,
+        title: isRainyWeather(weather) ? "비 오는 도착 하늘" : "도착 첫 하늘",
+        prompt: isRainyWeather(weather)
+          ? `${profile.arrivalName}의 빗빛이 느껴지는 하늘이나 젖은 길 반사를 한 장 남겨보세요.`
+          : `${profile.arrivalName}에 막 도착한 느낌으로 뻥 뚫린 하늘을 한 장 남겨보세요.`,
       };
     case "crosswalk":
       return {
         title: "여행자의 횡단보도",
-        prompt: `${cityName} 거리를 건너는 기분으로 횡단보도나 보행자 표식을 안전하게 찍어보세요.`,
+        prompt: `${weatherPrefix}${cityName} 거리를 건너는 기분으로 횡단보도나 보행자 표식을 안전하게 찍어보세요.`,
       };
     case "three_trees":
       return {
-        title: "초록 골목 발견",
-        prompt: "한 프레임 안에 나무가 여러 그루 들어오게 담아보세요. 공원길이면 더 좋아요.",
+        title: isWindyWeather(weather) ? "바람 타는 초록 골목" : "초록 골목 발견",
+        prompt: isWindyWeather(weather)
+          ? "바람에 흔들리는 나무, 잎, 가로수 그림자를 한 프레임에 담아보세요."
+          : "한 프레임 안에 나무가 여러 그루 들어오게 담아보세요. 공원길이면 더 좋아요.",
       };
     case "snack_find":
       return {
         title: "현지 간식 탐색",
-        prompt: "편의점이나 작은 가게에서 여행 중 만난 것 같은 간식 하나를 찾아보세요.",
+        prompt: isRainyWeather(weather)
+          ? "비 오는 여행길에 어울리는 따뜻한 음료나 간식을 찾아 기록해보세요."
+          : "편의점이나 작은 가게에서 여행 중 만난 것 같은 간식 하나를 찾아보세요.",
       };
     case "walk_15":
       return {
         title: "15분 도시 산책",
-        prompt: "걷는 리듬을 15분만 이어가면 세션 기록으로 바로 인증할 수 있어요.",
+        prompt: `${profile.arrivalName}의 여행 BGM을 들으며 걷는 리듬을 15분만 이어가면 세션 기록으로 인증할 수 있어요.`,
       };
     case "red_sign":
       return {
@@ -341,8 +500,14 @@ const HomePage = () => {
   const navigate = useNavigate();
   const { user, isLoggedIn } = useAuth();
   const watchIdRef = useRef<number | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioGainRef = useRef<GainNode | null>(null);
+  const audioIntervalRef = useRef<number | null>(null);
   const startedInViewRef = useRef(false);
   const [gpsStatus, setGpsStatus] = useState("GPS 대기 중");
+  const [weather, setWeather] = useState<WeatherSnapshot | null>(null);
+  const [weatherStatus, setWeatherStatus] = useState("날씨 미션 준비 중");
+  const [routePoints, setRoutePoints] = useState<GeoPointPayload[]>([]);
   const [textProofs, setTextProofs] = useState<Record<number, string>>({});
   const [uploadingMissionId, setUploadingMissionId] = useState<number | null>(null);
   const [localTick, setLocalTick] = useState(0);
@@ -352,6 +517,9 @@ const HomePage = () => {
   const [showResumePrompt, setShowResumePrompt] = useState(false);
   const [factIndex, setFactIndex] = useState(0);
   const [lastCompletedStamp, setLastCompletedStamp] = useState<string | null>(null);
+  const [audioPlaying, setAudioPlaying] = useState(false);
+  const [trackIndex, setTrackIndex] = useState(0);
+  const [flightBoosts, setFlightBoosts] = useState(0);
 
   const { data: todayResponse, isLoading: isTodayLoading } = useTodaySession();
   const { data: currency } = useCurrency();
@@ -374,12 +542,96 @@ const HomePage = () => {
   const ticketBalance = currency?.tickets ?? user?.tickets ?? 0;
   const couponBalance = currency?.coupons ?? user?.coupons ?? 0;
   const currentMission = visibleMissions[missionIndex] ?? visibleMissions[visibleMissions.length - 1];
-  const currentMissionCopy = currentMission ? getMissionCopy(currentMission, profile, activeToday.cityName) : null;
+  const currentMissionCopy = currentMission ? getMissionCopy(currentMission, profile, activeToday.cityName, weather) : null;
+  const currentTrack = profile.tracks[trackIndex % profile.tracks.length];
+  const currentRoutePoints = routePoints.length > 0 ? routePoints : [];
+  const routePolyline = routeSvgPoints(currentRoutePoints);
+  const routeFrameUrl = routeMapUrl(currentRoutePoints);
 
   const elapsedSeconds = useMemo(() => {
     if (!isActive || !activeToday.startedAt) return activeToday.durationSeconds;
     return activeToday.durationSeconds + localTick;
   }, [activeToday.durationSeconds, activeToday.startedAt, isActive, localTick]);
+
+  const stopGeneratedAudio = () => {
+    if (audioIntervalRef.current !== null) {
+      window.clearInterval(audioIntervalRef.current);
+      audioIntervalRef.current = null;
+    }
+    if (audioGainRef.current) {
+      audioGainRef.current.gain.setTargetAtTime(0.0001, audioContextRef.current?.currentTime ?? 0, 0.04);
+    }
+    setAudioPlaying(false);
+  };
+
+  const playGeneratedNote = (frequency: number, wave: OscillatorType) => {
+    const context = audioContextRef.current;
+    const gain = audioGainRef.current;
+    if (!context || !gain) return;
+
+    const oscillator = context.createOscillator();
+    const noteGain = context.createGain();
+    oscillator.type = wave;
+    oscillator.frequency.setValueAtTime(frequency, context.currentTime);
+    noteGain.gain.setValueAtTime(0.0001, context.currentTime);
+    noteGain.gain.exponentialRampToValueAtTime(0.035, context.currentTime + 0.03);
+    noteGain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.32);
+    oscillator.connect(noteGain);
+    noteGain.connect(gain);
+    oscillator.start();
+    oscillator.stop(context.currentTime + 0.34);
+  };
+
+  const startGeneratedAudio = async (nextTrackIndex = trackIndex) => {
+    const audioWindow = window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext };
+    const AudioContextConstructor = audioWindow.AudioContext || audioWindow.webkitAudioContext;
+    if (!AudioContextConstructor) {
+      toast.info("이 브라우저에서는 산책 BGM을 재생할 수 없어요");
+      return;
+    }
+
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContextConstructor();
+      audioGainRef.current = audioContextRef.current.createGain();
+      audioGainRef.current.gain.setValueAtTime(0.0001, audioContextRef.current.currentTime);
+      audioGainRef.current.connect(audioContextRef.current.destination);
+    }
+
+    if (audioContextRef.current.state === "suspended") {
+      await audioContextRef.current.resume();
+    }
+
+    if (audioIntervalRef.current !== null) {
+      window.clearInterval(audioIntervalRef.current);
+      audioIntervalRef.current = null;
+    }
+
+    const track = profile.tracks[nextTrackIndex % profile.tracks.length];
+    let noteIndex = 0;
+    audioGainRef.current?.gain.setTargetAtTime(1, audioContextRef.current.currentTime, 0.05);
+    playGeneratedNote(track.notes[noteIndex % track.notes.length], track.wave);
+    audioIntervalRef.current = window.setInterval(() => {
+      noteIndex += 1;
+      playGeneratedNote(track.notes[noteIndex % track.notes.length], track.wave);
+    }, track.tempoMs);
+    setAudioPlaying(true);
+  };
+
+  const handleToggleAudio = () => {
+    if (audioPlaying) {
+      stopGeneratedAudio();
+      return;
+    }
+    void startGeneratedAudio();
+  };
+
+  const handleNextTrack = () => {
+    const next = (trackIndex + 1) % profile.tracks.length;
+    setTrackIndex(next);
+    if (audioPlaying) {
+      void startGeneratedAudio(next);
+    }
+  };
 
   useEffect(() => {
     if (!isActive) {
@@ -396,18 +648,22 @@ const HomePage = () => {
       if (watchIdRef.current !== null) {
         navigator.geolocation?.clearWatch(watchIdRef.current);
       }
+      if (audioIntervalRef.current !== null) {
+        window.clearInterval(audioIntervalRef.current);
+      }
+      void audioContextRef.current?.close();
     },
     [],
   );
 
   useEffect(() => {
     if (travelStage === "departing") {
-      const timer = window.setTimeout(() => setTravelStage("arrived"), 1500);
+      const timer = window.setTimeout(() => setTravelStage("arrived"), 5600);
       return () => window.clearTimeout(timer);
     }
 
     if (travelStage === "arrived") {
-      const timer = window.setTimeout(() => setTravelStage("mission"), 2300);
+      const timer = window.setTimeout(() => setTravelStage("mission"), 3200);
       return () => window.clearTimeout(timer);
     }
 
@@ -463,11 +719,18 @@ const HomePage = () => {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const point = pointFromPosition(position);
+          setRoutePoints((prev) => (prev.length === 0 ? [point] : prev));
           setGpsStatus(`GPS 연결됨 · 오차 약 ${point.accuracyMeters ?? "-"}m`);
+          setWeatherStatus("현재 날씨를 미션에 반영하는 중");
+          void fetchWeatherSnapshot(point).then((snapshot) => {
+            setWeather(snapshot);
+            setWeatherStatus(snapshot ? `${snapshot.label} · 날씨 기반 미션 적용` : "날씨 확인 실패 · 기본 미션으로 진행");
+          });
           resolve(point);
         },
         () => {
           setGpsStatus("GPS 없이 산책 기록을 시작했어요");
+          setWeatherStatus("위치 권한 없이 기본 미션으로 진행");
           resolve(undefined);
         },
         { enableHighAccuracy: true, timeout: 9000, maximumAge: 5000 },
@@ -484,6 +747,7 @@ const HomePage = () => {
     watchIdRef.current = navigator.geolocation.watchPosition(
       (position) => {
         const point = pointFromPosition(position);
+        setRoutePoints((prev) => [...prev.slice(-59), point]);
         setGpsStatus(`GPS 기록 중 · 오차 약 ${point.accuracyMeters ?? "-"}m`);
         recordLocation.mutate({ sessionId, point });
       },
@@ -495,11 +759,13 @@ const HomePage = () => {
   const enterTravelFlow = () => {
     setFactIndex(0);
     setLastCompletedStamp(null);
+    setFlightBoosts(0);
     const firstAvailableIndex = visibleMissions.findIndex((mission) => mission.status !== "completed" && !skippedMissionKeys.includes(mission.missionKey));
     setMissionIndex(firstAvailableIndex >= 0 ? firstAvailableIndex : 0);
     setTravelStage("departing");
     setShowResumePrompt(false);
     playTravelCue(profile.notes);
+    void startGeneratedAudio();
   };
 
   const handleStart = async () => {
@@ -519,22 +785,29 @@ const HomePage = () => {
     }
 
     startedInViewRef.current = true;
+    setRoutePoints([]);
     enterTravelFlow();
-    const point = await getInitialPosition();
-    const data = await startSession.mutateAsync({
-      activityType: "walk",
-      startLocation: point,
-      environmentHint: inferEnvironmentHint(point),
-      playlistId: "walk-world-daily",
-    });
+    try {
+      const point = await getInitialPosition();
+      const data = await startSession.mutateAsync({
+        activityType: "walk",
+        startLocation: point,
+        environmentHint: inferEnvironmentHint(point),
+        playlistId: "walk-world-daily",
+      });
 
-    if (data.sessionId) {
-      beginLocationWatch(data.sessionId);
+      if (data.sessionId) {
+        beginLocationWatch(data.sessionId);
+      }
+
+      toast.success("오늘의 여행 산책이 시작됐어요", {
+        description: "미션은 선택이에요. 중간에 멈춰도 거리와 인증으로 보상을 받을 수 있습니다.",
+      });
+    } catch (error) {
+      setTravelStage("home");
+      stopGeneratedAudio();
+      toast.error(error instanceof Error ? error.message : "산책을 시작하지 못했습니다");
     }
-
-    toast.success("오늘의 여행 산책이 시작됐어요", {
-      description: "미션은 선택이에요. 중간에 멈춰도 거리와 인증으로 보상을 받을 수 있습니다.",
-    });
   };
 
   const handlePause = () => {
@@ -543,6 +816,7 @@ const HomePage = () => {
       watchIdRef.current = null;
     }
     setTravelStage("home");
+    stopGeneratedAudio();
     setGpsStatus("잠시 멈춤 · 다시 시작하면 이전 미션을 이어갈 수 있어요");
     toast.info("여행을 잠시 멈췄어요", {
       description: "오늘 산책 끝내기를 누르기 전까지 미션을 이어갈 수 있습니다.",
@@ -558,6 +832,7 @@ const HomePage = () => {
 
     const result = await finishSession.mutateAsync(activeToday.sessionId);
     setTravelStage("home");
+    stopGeneratedAudio();
     toast.success(result.status === "completed" ? "오늘의 여행 목표를 채웠어요" : "오늘 산책 기록을 저장했어요", {
       description: `티켓 ${result.ticketsEarned}장 · 스탬프 ${result.stampsEarned}개`,
     });
@@ -565,6 +840,16 @@ const HomePage = () => {
 
   const goNextMission = () => {
     setMissionIndex((value) => Math.min(value + 1, visibleMissions.length - 1));
+  };
+
+  const goPrevMission = () => {
+    setLastCompletedStamp(null);
+    setMissionIndex((value) => Math.max(value - 1, 0));
+  };
+
+  const selectMission = (index: number) => {
+    setLastCompletedStamp(null);
+    setMissionIndex(Math.max(0, Math.min(index, visibleMissions.length - 1)));
   };
 
   const handleSkipMission = () => {
@@ -643,6 +928,31 @@ const HomePage = () => {
     await exchangeCoupon.mutateAsync();
     toast.success("친구추가 쿠폰 1장을 교환했어요");
   };
+
+  const renderAudioMini = () => (
+    <div className="flex items-center gap-2 rounded-xl border border-border bg-card/95 px-2.5 py-2 shadow-card">
+      <button
+        type="button"
+        onClick={handleToggleAudio}
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${audioPlaying ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"}`}
+        aria-label={audioPlaying ? "산책 음악 멈추기" : "산책 음악 재생하기"}
+      >
+        {audioPlaying ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+      </button>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[11px] font-extrabold text-foreground">{currentTrack.title}</p>
+        <p className="truncate text-[10px] text-muted-foreground">{currentTrack.mood} · 생성 BGM</p>
+      </div>
+      <button
+        type="button"
+        onClick={handleNextTrack}
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary text-foreground"
+        aria-label="산책 음악 바꾸기"
+      >
+        <SkipForward className="h-4 w-4" />
+      </button>
+    </div>
+  );
 
   const renderMissionAction = (mission: SessionMissionData, compact = false) => {
     const completed = mission.status === "completed";
@@ -795,6 +1105,15 @@ const HomePage = () => {
             <p className="text-[11px] leading-5 text-muted-foreground">{gpsStatus}</p>
           </div>
 
+          <div className="mt-2 flex items-center gap-2 rounded-xl bg-ocean/10 px-3 py-2">
+            <CloudSun className="h-4 w-4 shrink-0 text-ocean" />
+            <p className="text-[11px] leading-5 text-muted-foreground">
+              {weather
+                ? `${weather.label}${weather.temperatureC !== null ? ` · ${weather.temperatureC}°C` : ""}${weather.windSpeedKmh !== null ? ` · 바람 ${weather.windSpeedKmh}km/h` : ""}`
+                : weatherStatus}
+            </p>
+          </div>
+
           <div className="mt-4 flex gap-2">
             {isFinished ? (
               <button
@@ -827,6 +1146,8 @@ const HomePage = () => {
               <Headphones className="h-5 w-5" />
             </a>
           </div>
+
+          {isActive && <div className="mt-3">{renderAudioMini()}</div>}
         </motion.section>
 
         <motion.section {...fade(0.14)} className="rounded-2xl bg-card p-4 shadow-card">
@@ -865,7 +1186,7 @@ const HomePage = () => {
                     <span className="text-lg">{mission.emoji}</span>
                     {completed ? <Check className="h-4 w-4" /> : skipped ? <X className="h-4 w-4" /> : <span className="font-num text-[11px] font-bold">{index + 1}</span>}
                   </div>
-                  <p className="mt-2 truncate text-[11px] font-extrabold">{getMissionCopy(mission, profile, activeToday.cityName).title}</p>
+                  <p className="mt-2 truncate text-[11px] font-extrabold">{getMissionCopy(mission, profile, activeToday.cityName, weather).title}</p>
                   <p className="mt-0.5 text-[10px] font-bold opacity-70">{proofLabel[mission.proofType]}</p>
                 </button>
               );
@@ -895,6 +1216,33 @@ const HomePage = () => {
                 <p className="font-num text-lg font-extrabold">{formatDuration(activeToday.durationSeconds)}</p>
                 <p className="text-[10px] text-muted-foreground">총 시간</p>
               </div>
+            </div>
+            <div className="mt-3 rounded-2xl bg-secondary/70 p-3">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-bold text-primary">오늘 걸은 길</p>
+                  <p className="text-[11px] text-muted-foreground">GPS 포인트 {currentRoutePoints.length}개</p>
+                </div>
+                <Map className="h-5 w-5 text-ocean" />
+              </div>
+              {routeFrameUrl && routePolyline ? (
+                <div className="relative h-40 overflow-hidden rounded-xl bg-card">
+                  <iframe
+                    title="오늘 산책 지도"
+                    src={routeFrameUrl}
+                    className="absolute inset-0 h-full w-full border-0 opacity-70"
+                    loading="lazy"
+                  />
+                  <svg viewBox="0 0 300 140" className="absolute inset-0 h-full w-full">
+                    <polyline points={routePolyline} fill="none" stroke="hsl(var(--accent))" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+                    <polyline points={routePolyline} fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              ) : (
+                <div className="rounded-xl bg-card px-3 py-4 text-[12px] leading-5 text-muted-foreground">
+                  이번 기기에 저장된 GPS 포인트가 2개 이상일 때 경로 지도가 표시됩니다. GPS 없이도 미션 보상은 받을 수 있어요.
+                </div>
+              )}
             </div>
           </motion.section>
         )}
@@ -1017,20 +1365,34 @@ const HomePage = () => {
             {travelStage === "departing" && (
               <div className="min-h-[31rem] px-5 py-6">
                 <div className="mb-6 flex items-center justify-between">
-                  <p className="rounded-full bg-secondary px-3 py-1 text-[11px] font-bold text-muted-foreground">walk2world air</p>
+                  <p className="rounded-full bg-secondary px-3 py-1 text-[11px] font-bold text-muted-foreground">walk2world air · gate 05</p>
                   <button type="button" onClick={handlePause} className="rounded-full bg-secondary p-2 text-muted-foreground" aria-label="여행 닫기">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
-                <div className="relative h-48 overflow-hidden rounded-2xl bg-gradient-to-br from-ocean/20 via-card to-gold/20">
-                  <div className="absolute left-8 right-8 top-1/2 h-0.5 border-t border-dashed border-primary/35" />
+                <div className="relative h-56 overflow-hidden rounded-2xl bg-gradient-to-br from-ocean/20 via-card to-gold/20">
                   <motion.div
-                    className="absolute left-4 top-[42%] flex h-14 w-14 items-center justify-center rounded-full bg-foreground text-background shadow-elevated"
-                    animate={{ x: [0, 250], y: [0, -20, 2], rotate: [0, 10, 0] }}
-                    transition={{ duration: 1.35, ease: "easeInOut", repeat: Infinity }}
+                    className="absolute left-5 top-8 h-8 w-20 rounded-full bg-white/80 blur-sm"
+                    animate={{ x: [0, 120, 30], opacity: [0.45, 0.9, 0.55] }}
+                    transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                  <motion.div
+                    className="absolute right-8 top-16 h-7 w-16 rounded-full bg-white/70 blur-sm"
+                    animate={{ x: [0, -140, -20], opacity: [0.55, 0.85, 0.45] }}
+                    transition={{ duration: 5.2, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                  <div className="absolute left-8 right-8 top-[56%] h-0.5 border-t border-dashed border-primary/35" />
+                  <motion.div
+                    className="absolute left-4 top-[46%] flex h-16 w-16 items-center justify-center rounded-full bg-foreground text-background shadow-elevated"
+                    animate={{ x: [0, 80 + flightBoosts * 12, 250], y: [0, -18 - flightBoosts * 3, -36, 4], rotate: [0, 8 + flightBoosts * 2, -3] }}
+                    transition={{ duration: 2.8, ease: "easeInOut", repeat: Infinity }}
                   >
-                    <Plane className="h-7 w-7" />
+                    <Plane className="h-8 w-8" />
                   </motion.div>
+                  <div className="absolute left-5 top-5 rounded-xl bg-card/90 px-3 py-2 shadow-card">
+                    <p className="text-[10px] font-bold text-muted-foreground">BOARDING PASS</p>
+                    <p className="text-sm font-extrabold text-foreground">내 동네 → {profile.arrivalName}</p>
+                  </div>
                   <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between text-[11px] font-extrabold text-muted-foreground">
                     <span>내 동네</span>
                     <span>{profile.arrivalName}</span>
@@ -1040,9 +1402,17 @@ const HomePage = () => {
                   <p className="text-[12px] font-extrabold text-primary">여행 출발 중</p>
                   <h2 className="mt-2 text-3xl font-extrabold leading-tight text-foreground">산책길 공항에서 이륙합니다</h2>
                   <p className="mt-3 text-[13px] leading-6 text-muted-foreground">
-                    GPS를 켜고, 짧은 여행 사운드를 재생했어요. 잠시 후 오늘의 목적지에 도착합니다.
+                    GPS와 날씨를 확인하고, 오늘의 여행 BGM을 켰어요. 창밖을 눌러 출발 리듬을 더해보세요.
                   </p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setFlightBoosts((value) => Math.min(value + 1, 5))}
+                  className="pressable mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-[13px] font-extrabold text-primary-foreground"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  창밖 보기
+                </button>
               </div>
             )}
 
@@ -1068,7 +1438,16 @@ const HomePage = () => {
                 <div className="mt-4 rounded-2xl bg-card p-4 shadow-card">
                   <p className="text-[11px] font-bold text-primary">도착 브리핑</p>
                   <p className="mt-2 min-h-[3rem] text-[14px] font-extrabold leading-6 text-foreground">{profile.facts[factIndex]}</p>
+                  <div className="mt-3 flex items-center gap-2 rounded-xl bg-secondary/70 px-3 py-2">
+                    <CloudSun className="h-4 w-4 shrink-0 text-ocean" />
+                    <p className="text-[11px] leading-5 text-muted-foreground">
+                      {weather
+                        ? `${weather.label}${weather.temperatureC !== null ? ` · ${weather.temperatureC}°C` : ""} · 오늘 미션에 반영`
+                        : weatherStatus}
+                    </p>
+                  </div>
                 </div>
+                <div className="mt-3">{renderAudioMini()}</div>
                 <button
                   type="button"
                   onClick={() => setTravelStage("mission")}
@@ -1092,17 +1471,31 @@ const HomePage = () => {
                   </button>
                 </div>
 
-                <div className="mb-4 flex gap-1.5">
+                <div className="mb-3">{renderAudioMini()}</div>
+
+                <div className="mb-4 grid grid-cols-5 gap-1.5" role="tablist" aria-label="여행 미션 이동">
                   {visibleMissions.map((mission, index) => {
                     const isDone = mission.status === "completed";
                     const isSkipped = skippedMissionKeys.includes(mission.missionKey);
                     return (
-                      <div
+                      <button
                         key={mission.missionKey}
-                        className={`h-2 flex-1 rounded-full ${
-                          isDone ? "bg-success" : isSkipped ? "bg-muted-foreground/30" : index === missionIndex ? "bg-primary" : "bg-secondary"
+                        type="button"
+                        role="tab"
+                        aria-selected={index === missionIndex}
+                        onClick={() => selectMission(index)}
+                        className={`flex h-9 items-center justify-center rounded-lg text-[11px] font-extrabold ${
+                          isDone
+                            ? "bg-success text-success-foreground"
+                            : isSkipped
+                              ? "bg-muted text-muted-foreground"
+                              : index === missionIndex
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-secondary text-foreground"
                         }`}
-                      />
+                      >
+                        {isDone ? <Check className="h-4 w-4" /> : isSkipped ? <X className="h-4 w-4" /> : index + 1}
+                      </button>
                     );
                   })}
                 </div>
@@ -1130,6 +1523,12 @@ const HomePage = () => {
                     </p>
                   </div>
 
+                  {skippedMissionKeys.includes(currentMission.missionKey) && currentMission.status !== "completed" && (
+                    <div className="mt-3 rounded-xl bg-gold/10 px-3 py-2 text-[12px] font-bold text-earth">
+                      건너뛴 미션이에요. 지금 다시 인증해도 보상과 스탬프를 받을 수 있습니다.
+                    </div>
+                  )}
+
                   {lastCompletedStamp && (
                     <div className="mt-3 rounded-xl bg-success/10 px-3 py-2 text-[12px] font-extrabold text-success">
                       인증 완료 · {lastCompletedStamp}
@@ -1146,22 +1545,33 @@ const HomePage = () => {
                   </div>
                 )}
 
-                <div className="mt-4 grid grid-cols-2 gap-2">
+                <div className="mt-4 grid grid-cols-3 gap-2">
                   <button
                     type="button"
-                    onClick={handleSkipMission}
-                    className="pressable rounded-xl bg-secondary py-3 text-[13px] font-extrabold text-foreground"
+                    onClick={goPrevMission}
+                    disabled={missionIndex === 0}
+                    className="pressable inline-flex items-center justify-center gap-1 rounded-xl bg-secondary py-3 text-[13px] font-extrabold text-foreground disabled:opacity-40"
                   >
-                    미션 넘어가기
+                    <SkipBack className="h-4 w-4" />
+                    이전
                   </button>
                   <button
                     type="button"
+                    aria-label="미션 넘어가기"
+                    onClick={handleSkipMission}
+                    className="pressable rounded-xl bg-secondary py-3 text-[13px] font-extrabold text-foreground"
+                  >
+                    넘어가기
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="오늘 산책 끝내기"
                     onClick={() => void handleFinish()}
                     disabled={finishSession.isPending || !activeToday.sessionId}
                     className="pressable inline-flex items-center justify-center gap-2 rounded-xl bg-foreground py-3 text-[13px] font-extrabold text-background disabled:opacity-50"
                   >
                     {finishSession.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CircleStop className="h-4 w-4" />}
-                    오늘 산책 끝내기
+                    끝내기
                   </button>
                 </div>
 

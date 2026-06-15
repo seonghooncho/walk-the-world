@@ -212,6 +212,20 @@ const mockApi = async (page: Page, options: { initialFriend?: boolean } = {}) =>
   const fulfill = (route: Route, data: unknown, meta?: unknown) =>
     route.fulfill({ contentType: "application/json", body: JSON.stringify({ ...apiResponse(data), meta }) });
 
+  await page.route(/^https:\/\/api\.open-meteo\.com\/v1\/forecast/, async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        current: {
+          temperature_2m: 22,
+          precipitation: 0,
+          weather_code: 1,
+          wind_speed_10m: 8,
+        },
+      }),
+    });
+  });
+
   await page.route(/^https?:\/\/[^/]+\/api\//, async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -556,6 +570,7 @@ test("protected pages redirect to login with redirect query", async ({ page }) =
 });
 
 test("daily session starts with GPS, completes a mission, and awards partial results", async ({ page, context }) => {
+  test.setTimeout(45_000);
   await authenticate(page);
   await context.grantPermissions(["geolocation"]);
   await context.setGeolocation({ latitude: 37.5665, longitude: 126.978 });
@@ -566,9 +581,10 @@ test("daily session starts with GPS, completes a mission, and awards partial res
   await page.getByRole("button", { name: "오늘의 산책 시작하기" }).click();
 
   await expect(page.getByText("여행 출발 중")).toBeVisible();
-  await expect(page.getByText("도쿄에 도착했어요")).toBeVisible({ timeout: 5000 });
-  await expect(page.getByText("도쿄 여행 미션")).toBeVisible({ timeout: 5000 });
+  await expect(page.getByText("도쿄에 도착했어요")).toBeVisible({ timeout: 9000 });
+  await expect(page.getByText("도쿄 여행 미션")).toBeVisible({ timeout: 12000 });
   await expect(page.getByText(/GPS 기록 중|GPS 연결됨/)).toBeVisible();
+  await expect(page.getByText(/구름 조금|날씨 기반 미션 적용/)).toBeVisible();
 
   await page.getByRole("button", { name: "미션 넘어가기" }).click();
   await page.getByRole("button", { name: "세션 기록으로 인증하기" }).click();
