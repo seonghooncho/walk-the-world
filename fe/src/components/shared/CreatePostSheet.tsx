@@ -5,6 +5,7 @@ import UserAvatar from "./UserAvatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCreatePost } from "@/hooks/useApi";
 import { SOCIAL_TEXT_MAX_LENGTH } from "@/lib/input-limits";
+import { trackEvent } from "@/lib/analytics";
 import { uploadImageFile } from "@/lib/upload-file";
 import type { UiCity } from "@/lib/city-utils";
 import { toast } from "sonner";
@@ -64,6 +65,10 @@ const CreatePostSheet = ({ open, onClose, city }: CreatePostSheetProps) => {
       });
 
       toast.success("미션 인증이 등록되었습니다");
+      trackEvent("mission_post_created", {
+        city_id: city?.id ?? user.currentCityId,
+        has_image: Boolean(imageKey),
+      });
       reset();
       onClose();
     } catch (error) {

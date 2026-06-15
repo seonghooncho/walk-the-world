@@ -25,6 +25,7 @@ get_optional_param() {
 
 export VITE_API_BASE_URL="$(get_param "${SSM_PREFIX}/VITE_API_BASE_URL")"
 export VITE_GOOGLE_CLIENT_ID="$(get_optional_param "${SSM_PREFIX}/VITE_GOOGLE_CLIENT_ID")"
+export VITE_GA_MEASUREMENT_ID="$(get_optional_param "${SSM_PREFIX}/VITE_GA_MEASUREMENT_ID")"
 
 cd "${ROOT_DIR}/fe"
 npm run build

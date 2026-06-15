@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import GoogleLoginButton from "@/components/shared/GoogleLoginButton";
 import KakaoLoginButton from "@/components/shared/KakaoLoginButton";
 import { ApiError } from "@/lib/api";
+import { trackEvent } from "@/lib/analytics";
 import { isValidSignupPassword, normalizePassword, PASSWORD_RULE_MESSAGE } from "@/lib/password";
 
 type Mode = "login" | "signup";
@@ -114,9 +115,11 @@ const LoginPage = () => {
       if (mode === "login") {
         const result = await login.mutateAsync({ email: normalizedEmail, password: normalizedPassword });
         toast.success(result.restored ? "계정이 복구되었습니다" : "로그인 성공!");
+        trackEvent("login", { method: "email", restored: Boolean(result.restored) });
       } else {
         await signup.mutateAsync({ email: normalizedEmail, password: normalizedPassword, name: normalizedName });
         toast.success("회원가입 완료!");
+        trackEvent("sign_up", { method: "email" });
       }
       await completeAuthenticatedFlow();
     } catch (error: unknown) {

@@ -58,6 +58,25 @@ cd fe && npm run e2e
 
 웹 제품 기준과 QA 시나리오는 [docs/README.md](docs/README.md)를 먼저 확인한다.
 
+프론트 운영 빌드는 SSM Parameter Store의 `/walkworld/{env}/frontend/*` 값을 읽는다.
+
+필수 환경변수:
+
+```text
+VITE_API_BASE_URL
+```
+
+선택 환경변수:
+
+```text
+VITE_GOOGLE_CLIENT_ID
+VITE_GA_MEASUREMENT_ID
+```
+
+- `VITE_GA_MEASUREMENT_ID`는 GA4 웹 데이터 스트림의 Measurement ID(`G-...`)다.
+- 값이 없거나 `G-` 형식이 아니면 Google Analytics 스크립트는 로드되지 않는다.
+- GA4 계정/속성/웹 데이터 스트림은 Google Analytics Admin에서 사용자가 직접 생성하고, 생성된 Measurement ID를 SSM에 저장한다.
+
 ## 모바일 앱 작업
 
 모바일 앱은 `mobile/` 아래의 Expo Router + React Native 구조로 관리한다. 웹과 동일한 디자인 토큰, 정적 도시/미션 데이터, 백엔드 API 계약을 기준으로 구현한다.

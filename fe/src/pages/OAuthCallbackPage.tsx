@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { ApiError, setTokens } from "@/lib/api";
+import { trackEvent } from "@/lib/analytics";
 
 const normalizeRedirect = (redirectPath: string | null) => {
   if (!redirectPath || !redirectPath.startsWith("/") || redirectPath.startsWith("//")) {
@@ -70,12 +71,14 @@ const OAuthCallbackPage = () => {
         await withAuthReadyTimeout(onLoginSuccess());
         setStatus("여권 확인 완료 · 이동합니다");
         toast.success("소셜 로그인 성공!");
+        trackEvent("login", { method: "kakao" });
       } catch (authError) {
         if (authError instanceof Error && authError.message === AUTH_READY_TIMEOUT_MESSAGE) {
           setStatus("로그인은 완료됐고 여권 정보가 조금 늦게 도착하고 있어요");
           toast.success("로그인은 완료됐어요", {
             description: "앱으로 이동한 뒤 여권 정보를 다시 확인합니다.",
           });
+          trackEvent("login", { method: "kakao", profile_timeout: true });
         } else {
           setStatus("여권 확인에 실패했어요");
           if (authError instanceof ApiError && authError.status === 401) {

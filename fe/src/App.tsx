@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import AnalyticsRouteTracker from "@/components/analytics/AnalyticsRouteTracker";
 import ProtectedRoute from "@/components/layout/ProtectedRoute";
 import LoginModal from "@/components/shared/LoginModal";
 import HomePage from "./pages/HomePage";
@@ -39,6 +40,7 @@ const App = () => (
         <Sonner />
         <LoginModal />
         <BrowserRouter>
+          <AnalyticsRouteTracker />
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/demo" element={<DemoPage />} />

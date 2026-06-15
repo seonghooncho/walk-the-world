@@ -46,6 +46,7 @@ import {
   useTodaySession,
 } from "@/hooks/useApi";
 import { type GeoPointPayload, type SessionMissionData, type TodaySessionData } from "@/lib/api";
+import { trackEvent } from "@/lib/analytics";
 import { uploadImageFile } from "@/lib/upload-file";
 import cityTokyoImg from "@/assets/city-tokyo.jpg";
 import { toast } from "sonner";
@@ -766,6 +767,7 @@ const HomePage = () => {
     setShowResumePrompt(false);
     playTravelCue(profile.notes);
     void startGeneratedAudio();
+    trackEvent("travel_start_opened", { city_id: activeToday.cityId, city_name: activeToday.cityName });
   };
 
   const handleStart = async () => {
@@ -803,6 +805,11 @@ const HomePage = () => {
       toast.success("오늘의 여행 산책이 시작됐어요", {
         description: "미션은 선택이에요. 중간에 멈춰도 거리와 인증으로 보상을 받을 수 있습니다.",
       });
+      trackEvent("travel_session_started", {
+        city_id: data.cityId,
+        gps_started: Boolean(point),
+        weather_loaded: Boolean(weather),
+      });
     } catch (error) {
       setTravelStage("home");
       stopGeneratedAudio();
@@ -833,6 +840,12 @@ const HomePage = () => {
     const result = await finishSession.mutateAsync(activeToday.sessionId);
     setTravelStage("home");
     stopGeneratedAudio();
+    trackEvent("travel_session_finished", {
+      status: result.status,
+      distance_meters: result.distanceMeters,
+      tickets_earned: result.ticketsEarned,
+      stamps_earned: result.stampsEarned,
+    });
     toast.success(result.status === "completed" ? "오늘의 여행 목표를 채웠어요" : "오늘 산책 기록을 저장했어요", {
       description: `티켓 ${result.ticketsEarned}장 · 스탬프 ${result.stampsEarned}개`,
     });
@@ -884,6 +897,11 @@ const HomePage = () => {
       toast.success("사진 미션이 인증됐어요", {
         description: "친구에게 보여줄 산책 스토리 proof로 저장됩니다.",
       });
+      trackEvent("mission_proof_submitted", {
+        mission_key: mission.missionKey,
+        proof_type: mission.proofType,
+        city_id: activeToday.cityId,
+      });
       setLastCompletedStamp(mission.stampReward);
       goNextMission();
     } finally {
@@ -907,6 +925,11 @@ const HomePage = () => {
     });
     setTextProofs((prev) => ({ ...prev, [mission.id as number]: "" }));
     toast.success("기록 미션이 인증됐어요");
+    trackEvent("mission_proof_submitted", {
+      mission_key: mission.missionKey,
+      proof_type: mission.proofType,
+      city_id: activeToday.cityId,
+    });
     setLastCompletedStamp(mission.stampReward);
     goNextMission();
   };
@@ -920,6 +943,11 @@ const HomePage = () => {
       text: "오늘의 산책 세션 기록으로 인증",
     });
     toast.success("세션 미션이 인증됐어요");
+    trackEvent("mission_proof_submitted", {
+      mission_key: mission.missionKey,
+      proof_type: mission.proofType,
+      city_id: activeToday.cityId,
+    });
     setLastCompletedStamp(mission.stampReward);
     goNextMission();
   };
